@@ -1,0 +1,1 @@
+Starting with a temperature monitor & fan controller with an arduino for managing the temperature of a smoker

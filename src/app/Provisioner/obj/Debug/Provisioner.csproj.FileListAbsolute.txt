@@ -1,0 +1,9 @@
+C:\source\GitHub\HioS\src\app\HioS\Provisioner\bin\Debug\Provisioner.exe.config
+C:\source\GitHub\HioS\src\app\Provisioner\bin\Debug\Provisioner.exe.config
+C:\source\GitHub\HioS\src\app\Provisioner\bin\Debug\Provisioner.exe
+C:\source\GitHub\HioS\src\app\Provisioner\bin\Debug\Provisioner.pdb
+C:\source\GitHub\HioS\src\app\Provisioner\obj\Debug\Provisioner.csprojResolveAssemblyReference.cache
+C:\source\GitHub\HioS\src\app\Provisioner\obj\Debug\Provisioner.Properties.Resources.resources
+C:\source\GitHub\HioS\src\app\Provisioner\obj\Debug\Provisioner.csproj.GenerateResource.Cache
+C:\source\GitHub\HioS\src\app\Provisioner\obj\Debug\Provisioner.exe
+C:\source\GitHub\HioS\src\app\Provisioner\obj\Debug\Provisioner.pdb
