@@ -2,8 +2,8 @@ var express = require('express'),
     Promise = require('promise'),
     router = express.Router();
     
-router.get('/test', function(req, res) {
-    res.send('hello world');
+router.get('/list', function(req, res) {
+    
 });
 
 router.post('/test', function(req, res) {

@@ -6,6 +6,11 @@
 storage::storageDataStruct store;
 const int READ_BUF_SIZE = 164;
 char readbuf[READ_BUF_SIZE];
+const String postData =	"POST /device/smokes/test HTTP/1.1\r\n"
+						"content-type:application/x-www-form-urlencoded;charset=utf-8\r\n"
+						"host: 192.168.1.91\r\n"
+						"content-length:207\r\n\r\n"
+						"Action=GetStatus&SignatureMethod=HmacSHA256&JobId=JOBID&SignatureVersion=2&Version=2014-12-18&Signature=%2FVfkltRBOoSUi1sWxRzN8rw%3D&Timestamp=2014-12-20T22%3A30%3A59.556Z\r\n";
 
 void setup() 
 {
@@ -49,6 +54,11 @@ void loop(){
 			provisionMode();
 		}
 	}
+	
+	Serial.println(F("Tryin to post...."));
+	postValues();
+
+	delay(10000);
 }
 
 void loadStore() 
@@ -172,6 +182,44 @@ void printAPList()
 	}
 }
 
+void postValues()
+{
+  // To use the ESP8266 as a TCP client, use the 
+  // ESP8266Client class. First, create an object:
+  ESP8266Client client;
+
+  // ESP8266Client connect([server], [port]) is used to 
+  // connect to a server (const char * or IPAddress) on
+  // a specified port.
+  // Returns: 1 on success, 2 on already connected,
+  // negative on fail (-1=TIMEOUT, -3=FAIL).
+  IPAddress serverIP(192,168,1,91);
+  int retVal = client.connect(serverIP, 8080);
+  if (retVal <= 0)
+  {
+	  if(retVal == -1) 
+	  {
+		Serial.println(F("Failed to connect to server.  (TIMEOUT) "));
+		return;
+	  } else if(retVal == -3) 
+	  {
+		Serial.println(F("Failed to connect to server.  (GENERAL) "));
+		return;
+	  } else{
+		Serial.print(F("Failed to connect to server.  "));
+		Serial.println(retVal);
+		return;
+	  }
+  } else 
+  {
+		Serial.println(F("Connected to server. Testing post."));
+  }
+
+  // print and write can be used to send data to a connected
+  // client connection.
+  client.print(postData);
+}
+
 void initWifi() 
 {
 	while(!esp8266.begin(9600))
@@ -220,6 +268,6 @@ int connectWifi()
 		}
 	}
 
-	Serial.print(F("Connected"));
+	Serial.println(F("Connected"));
 	return 0;
 }

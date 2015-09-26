@@ -11,20 +11,24 @@ var config = {
                 if (err) {
                     console.log('Coudln\'t load local config file: '  + err);
                     reject(err);
-                }
-                var cfgObj = JSON.parse(data);
-                extend(config, cfgObj);  
-                
-                resolve(config);    
+                } else{
+                    var cfgObj = JSON.parse(data);
+                    extend(config, cfgObj);  
+                    
+                    resolve(config);   
+                }    
             });
         });
 	},
     // defaults
-    mysql: {
-        user: 'foo',
-        password: 'bar',
-        database: 'server',
-        host: 'localhost'
+    store: {
+        type: 'mysql',
+        params: {
+            user: 'foo',
+            password: 'bar',
+            database: 'hios',
+            host: 'localhost'
+        }
     },
     publicDir: 'public/',
     listenPort: 8080
