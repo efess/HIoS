@@ -65,7 +65,7 @@ function getUpgradeSqls(currentVersion){
             'temp2 FLOAT,' +
             'temp3 FLOAT,' +
             'temp4 FLOAT,' +
-            'fanState VARCHAR(20)' +
+            'fanstate VARCHAR(20)' +
             ');');
     }
     

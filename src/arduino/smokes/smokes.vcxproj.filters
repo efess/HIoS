@@ -25,14 +25,8 @@
     <Filter Include="_libraries\SoftwareSerial">
       <UniqueIdentifier>{7b675a80-a506-4c88-b1a8-a92e014fcbe3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="_libraries\SparkFun_ESP8266_AT_Arduino_Library-master">
-      <UniqueIdentifier>{7d4eb4f3-9f93-43ad-a692-0818ea32c8c5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src">
-      <UniqueIdentifier>{6ca8f5e7-7048-40fd-8ddb-08cc5f307f39}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\util">
-      <UniqueIdentifier>{82a6ee2b-a5da-4bcd-8377-21b6b368774a}</UniqueIdentifier>
+    <Filter Include="_libraries\SparkfunESP8266">
+      <UniqueIdentifier>{f246eb7e-8f1e-4edf-8b71-dc489f21c9bd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -111,17 +105,14 @@
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial\SoftwareSerial.h">
       <Filter>_libraries\SoftwareSerial</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266Client.h">
-      <Filter>_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src</Filter>
+    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266Client.h">
+      <Filter>_libraries\SparkfunESP8266</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266Server.h">
-      <Filter>_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src</Filter>
+    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266Server.h">
+      <Filter>_libraries\SparkfunESP8266</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266WiFi.h">
-      <Filter>_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\util\ESP8266_AT.h">
-      <Filter>_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\util</Filter>
+    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266WiFi.h">
+      <Filter>_libraries\SparkfunESP8266</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -203,14 +194,14 @@
     <ClCompile Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial\SoftwareSerial.cpp">
       <Filter>_libraries\SoftwareSerial</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266Client.cpp">
-      <Filter>_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src</Filter>
+    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266Client.cpp">
+      <Filter>_libraries\SparkfunESP8266</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266Server.cpp">
-      <Filter>_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src</Filter>
+    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266Server.cpp">
+      <Filter>_libraries\SparkfunESP8266</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266WiFi.cpp">
-      <Filter>_libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src</Filter>
+    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266WiFi.cpp">
+      <Filter>_libraries\SparkfunESP8266</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@
 #include <avr/pgmspace.h>
 #include <eeprom.h>
 #include <SoftwareSerial.h> 
-#include <SparkFunESP8266WiFi.h>
+#include "SparkFunESP8266WiFi.h"
 
 storage::storageDataStruct store;
 const int READ_BUF_SIZE = 164;
@@ -11,15 +11,11 @@ int count, offset, length; // common buffer vars
 
 //const char destServer[] = "192.168.1.91";
 
-//const String httpRequest1 = "GET /device/smokes/test HTTP/1.1\n";
-//const String httpRequest2 = "Host: 192.168.1.91\n"
-//                           "Connection: close\n\n";
 
-const char postData[] PROGMEM  = "POST /device/smokes/test HTTP/1.1\r\n"
+const char postStart[] PROGMEM  = "POST /device/smokes/test HTTP/1.1\r\n"
 						"content-type:application/x-www-form-urlencoded;charset=utf-8\r\n"
-						"host: 192.168.1.91\r\n"
-						"content-length:172\r\n\r\n"
-						"Action=GetStatus&SignatureMethod=HmacSHA256&JobId=JOBID&SignatureVersion=2&Version=2014-12-18&Signature=%2FVfkltRBOoSUi1sWxRzN8rw%3D&Timestamp=2014-12-20T22%3A30%3A59.556Z\r\n";
+						"host: ";
+const char newLine[] = "\r\n";
 
 void setup() 
 {
@@ -31,6 +27,7 @@ void setup()
 	{
 		provisionMode();
 	}
+	connectWifi();
 }
 
 void printProvisionInfo() 
@@ -44,9 +41,10 @@ void printProvisionInfo()
 	printAPList();
 
 	Serial.println(F("done"));
-
 }
+
 void loop(){
+
 	if(connectWifi() < 0)
 	{
 		return;
@@ -219,6 +217,7 @@ void postValues()
   // Returns: 1 on success, 2 on already connected,
   // negative on fail (-1=TIMEOUT, -3=FAIL).
   //IPAddress serverIP(192,168,1,91);
+  // this makes the status return 0
   int retVal = client.connect("192.168.1.91", 8080);
   if (retVal <= 0)
   {
@@ -241,7 +240,45 @@ void postValues()
   }
   
   Serial.println(F("Sending HTTP request."));
-  writeProgmem(postData, &client);
+  short fanstate = 1;
+
+  char temp_one[7];
+  char temp_two[7];
+  char ipStr[17];
+  char lenStr[3];
+
+  IPAddress thisIp = esp8266.localIP();
+  sprintf(ipStr, "%d.%d.%d.%d", thisIp[0], thisIp[1], thisIp[2], thisIp[3]);
+
+  dtostrf(251.92234, 7, 2, temp_two);
+
+  dtostrf(150.33456, 7, 2, temp_one);
+
+  writeProgmem(postStart, &client);
+  Serial.println(temp_one);
+  Serial.println(temp_two);
+  sprintf(readbuf, "id=%s&temp1=%s&temp2=%s&fanstate=%d", store.id, temp_one, temp_two, fanstate);
+  Serial.println(readbuf);
+  length = strlen(readbuf);
+  sprintf(lenStr, "%d", length);
+
+  client.write(ipStr);
+  client.write(newLine);
+  client.write("content-length:");
+  client.write(lenStr);
+
+  client.write(newLine);
+  client.write(newLine);
+
+  client.write(readbuf);
+
+  client.write(newLine);
+  client.flush();
+  //client.print("GET /device/smokes/test HTTP/1.1\r\n");
+  //client.print("Host: localhost:8080\r\n\r\n");
+  //client.print("Connection: keep-alive\r\n\");
+
+
   // print and write can be used to send data to a connected
   // client connection.
 
@@ -252,8 +289,9 @@ void postValues()
   
   // connected() is a boolean return value - 1 if the 
   // connection is active, 0 if it's closed.
-  if (client.connected())
-    client.stop(); // stop() closes a TCP connection.
+
+	if (client.connected())
+		client.stop(); // stop() closes a TCP connection.
 }
 
 void initWifi() 

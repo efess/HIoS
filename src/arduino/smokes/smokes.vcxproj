@@ -44,7 +44,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>c:\bin\arduino\hardware\arduino\avr\cores\arduino;c:\bin\arduino\hardware\arduino\avr\variants\standard;C:\source\GitHub\HIoS\src\arduino\smokes;c:\bin\arduino\hardware\arduino\avr\libraries\EEPROM;c:\bin\arduino\hardware\arduino\avr\libraries\EEPROM\utility;c:\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial;c:\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial\utility;C:\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src;C:\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\utility;c:\bin\arduino\libraries;c:\bin\arduino\hardware\arduino\avr\libraries;C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\Extensions\4wozz4gy.diz\Micro Platforms\default\debuggers;C:\Users\efess\Documents\Arduino\libraries;c:\bin\arduino\hardware\arduino\avr\cores\arduino;c:\bin\arduino\hardware\arduino\avr\variants\standard;c:\bin\arduino\hardware\arduino\avr\libraries\EEPROM;c:\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial;C:\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src;c:\bin\arduino\libraries;c:\bin\arduino\hardware\arduino\avr\libraries;C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\Extensions\4wozz4gy.diz\Micro Platforms\default\debuggers;C:\Users\efess\Documents\Arduino\libraries;c:\bin\arduino\hardware\tools\avr/avr/include/;c:\bin\arduino\hardware\tools\avr//avr/include/avr/;c:\bin\arduino\hardware\tools\avr/lib\gcc\avr\4.8.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>c:\bin\arduino\hardware\arduino\avr\cores\arduino;c:\bin\arduino\hardware\arduino\avr\variants\standard;C:\source\GitHub\HIoS\src\arduino\smokes;c:\bin\arduino\hardware\arduino\avr\libraries\EEPROM;c:\bin\arduino\hardware\arduino\avr\libraries\EEPROM\utility;c:\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial;c:\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial\utility;c:\bin\arduino\libraries;c:\bin\arduino\hardware\arduino\avr\libraries;C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\Extensions\4wozz4gy.diz\Micro Platforms\default\debuggers;C:\Users\efess\Documents\Arduino\libraries;c:\bin\arduino\hardware\arduino\avr\cores\arduino;c:\bin\arduino\hardware\arduino\avr\variants\standard;c:\bin\arduino\hardware\arduino\avr\libraries\EEPROM;c:\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial;c:\bin\arduino\libraries;c:\bin\arduino\hardware\arduino\avr\libraries;C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\Extensions\4wozz4gy.diz\Micro Platforms\default\debuggers;C:\Users\efess\Documents\Arduino\libraries;c:\bin\arduino\hardware\tools\avr/avr/include/;c:\bin\arduino\hardware\tools\avr//avr/include/avr/;c:\bin\arduino\hardware\tools\avr/lib\gcc\avr\4.8.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>C:\source\GitHub\HioS\src\arduino\smokes\Visual Micro\.smokes.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>true</IgnoreStandardIncludePath>
       <PreprocessorDefinitions>__AVR_ATmega328p__;__AVR_ATmega328P__;F_CPU=16000000L;ARDUINO=165;ARDUINO_AVR_UNO;ARDUINO_ARCH_AVR;__cplusplus;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -95,10 +95,9 @@
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\EEPROM\EEPROM.h" />
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial\SoftwareSerial.h" />
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\variants\standard\pins_arduino.h" />
-    <ClInclude Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266Client.h" />
-    <ClInclude Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266Server.h" />
-    <ClInclude Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266WiFi.h" />
-    <ClInclude Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\util\ESP8266_AT.h" />
+    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266Client.h" />
+    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266Server.h" />
+    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266WiFi.h" />
     <ClInclude Include="storage.h" />
     <ClInclude Include="Visual Micro\.smokes.vsarduino.h" />
   </ItemGroup>
@@ -128,9 +127,9 @@
     <ClCompile Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\cores\arduino\WMath.cpp" />
     <ClCompile Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\cores\arduino\WString.cpp" />
     <ClCompile Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial\SoftwareSerial.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266Client.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266Server.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\Users\efess\Documents\Arduino\libraries\SparkFun_ESP8266_AT_Arduino_Library-master\src\SparkFunESP8266WiFi.cpp" />
+    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266Client.cpp" />
+    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266Server.cpp" />
+    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266WiFi.cpp" />
     <ClCompile Include="storage.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

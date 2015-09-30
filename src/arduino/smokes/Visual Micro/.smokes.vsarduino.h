@@ -84,6 +84,13 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portInputRegister(P)
 #define portModeRegister(P)
 #include <smokes.ino>
+#include <ESP8266_AT.h>
+#include <SparkFunESP8266Client.cpp>
+#include <SparkFunESP8266Client.h>
+#include <SparkFunESP8266Server.cpp>
+#include <SparkFunESP8266Server.h>
+#include <SparkFunESP8266WiFi.cpp>
+#include <SparkFunESP8266WiFi.h>
 #include <storage.cpp>
 #include <storage.h>
 #endif
