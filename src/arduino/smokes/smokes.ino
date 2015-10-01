@@ -3,11 +3,14 @@
 #include <eeprom.h>
 #include <SoftwareSerial.h> 
 #include "SparkFunESP8266WiFi.h"
+#include "Thermo.h"
 
 storage::storageDataStruct store;
 const int READ_BUF_SIZE = 164;
 char readbuf[READ_BUF_SIZE];
 int count, offset, length; // common buffer vars
+Thermo amp1(7,6,5), 
+	amp2(7,6,4);
 
 //const char destServer[] = "192.168.1.91";
 
@@ -60,8 +63,18 @@ void loop(){
 		}
 	}
 	
-	Serial.println(F("Tryin to post...."));
-	postValues();
+	long temp;
+	/*Serial.println(F("Tryin to post...."));
+	postValues();*/
+	Serial.println("Reading temp1..");
+	temp = amp1.readTemp();
+	Serial.print("temp1: ");
+	Serial.println(temp);
+	
+	Serial.println("Reading temp2..");
+	temp = amp2.readTemp();
+	Serial.print("temp2: ");
+	Serial.println(temp);
 
 	delay(10000);
 }

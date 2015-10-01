@@ -91,6 +91,8 @@ extern "C" void __cxa_pure_virtual() {;}
 #include <SparkFunESP8266Server.h>
 #include <SparkFunESP8266WiFi.cpp>
 #include <SparkFunESP8266WiFi.h>
+#include <Thermo.cpp>
+#include <Thermo.h>
 #include <storage.cpp>
 #include <storage.h>
 #endif
