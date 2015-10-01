@@ -22,6 +22,8 @@ const char newLine[] = "\r\n";
 
 void setup() 
 {
+	amp1.setIsFarenheit(1);
+	amp2.setIsFarenheit(1);
 	Serial.begin(9600);
 	loadStore();
 	initWifi();
@@ -64,17 +66,22 @@ void loop(){
 	}
 	
 	long temp;
-	/*Serial.println(F("Tryin to post...."));
-	postValues();*/
 	Serial.println("Reading temp1..");
-	temp = amp1.readTemp();
-	Serial.print("temp1: ");
-	Serial.println(temp);
+	amp1.readTemp();
+	Serial.print("internal: ");
+	Serial.println(amp1.internalTemp);
+	Serial.print("external: ");
+	Serial.println(amp1.externalTemp);
 	
 	Serial.println("Reading temp2..");
-	temp = amp2.readTemp();
-	Serial.print("temp2: ");
-	Serial.println(temp);
+	amp2.readTemp();
+	Serial.print("internal: ");
+	Serial.println(amp2.internalTemp);
+	Serial.print("external: ");
+	Serial.println(amp2.externalTemp);
+
+	Serial.println(F("Tryin to post...."));
+	postValues();
 
 	delay(10000);
 }
@@ -254,18 +261,18 @@ void postValues()
   
   Serial.println(F("Sending HTTP request."));
   short fanstate = 1;
-
-  char temp_one[7];
-  char temp_two[7];
+  
+char temp_one[10];
+char temp_two[10];
   char ipStr[17];
   char lenStr[3];
 
   IPAddress thisIp = esp8266.localIP();
   sprintf(ipStr, "%d.%d.%d.%d", thisIp[0], thisIp[1], thisIp[2], thisIp[3]);
 
-  dtostrf(251.92234, 7, 2, temp_two);
+  dtostrf(amp2.externalTemp, 7, 2, temp_two);
 
-  dtostrf(150.33456, 7, 2, temp_one);
+  dtostrf(amp1.externalTemp, 7, 2, temp_one);
 
   writeProgmem(postStart, &client);
   Serial.println(temp_one);

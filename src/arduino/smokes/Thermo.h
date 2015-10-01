@@ -3,13 +3,26 @@
 #pragma once
 class Thermo
 {
-const unsigned int clockDelayuS = 1;
+	enum tempScale {
+		CELSIUS = 0,
+		FARENHEIT = 1
+	};
 public:
-	Thermo(int clockPin, int dataPin, int chipSelectPin);
-	long readTemp();
+
+	Thermo(uint8_t clockPin, uint8_t dataPin, uint8_t chipSelectPin);
+	int readTemp();
+	void setIsFarenheit(bool);
+	float externalTemp;
+	float internalTemp;
+
 private:
-	 int clock;
-	 int dataOut;
-	 int chipSelect;
+	const unsigned int clockDelayuS = 1;
+	uint8_t clock;
+	uint8_t dataOut;
+	uint8_t chipSelect;
+
+	bool _isFarenheit;
+
+	float convertFarenheit(float celsius);
 };
 
