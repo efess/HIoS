@@ -15,7 +15,7 @@ Thermo amp1(7,6,5),
 //const char destServer[] = "192.168.1.91";
 
 
-const char postStart[] PROGMEM  = "POST /device/smokes/test HTTP/1.1\r\n"
+const char postStart[] PROGMEM  = "POST /device/smokes/event HTTP/1.1\r\n"
 						"content-type:application/x-www-form-urlencoded;charset=utf-8\r\n"
 						"host: ";
 const char newLine[] = "\r\n";

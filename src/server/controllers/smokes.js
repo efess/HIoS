@@ -23,6 +23,8 @@ router.post('/event', function(req, res) {
         new Date(Date.UTC()),
         req.body.temp1,
         req.body.temp2,
+        0,
+        0,
         req.body.fanstate
     ];
     
