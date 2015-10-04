@@ -1,5 +1,6 @@
 var db = require('../db');
 var R = require('ramda');
+var Promise = require('promise');
 // To modify database
 // - increment below database_version variable
 // - append sql statements to script at the end of this class using new version
@@ -37,7 +38,7 @@ function setLatestVersion(){
 
 function getUpgradeSqls(currentVersion){
     var upgradeSqls = [];
-    
+    return [];
     // Version 0 - initial prototype
     if(currentVersion <= 0){
         upgradeSqls.push('CREATE TABLE IF NOT EXISTS devices(' +
@@ -60,12 +61,25 @@ function getUpgradeSqls(currentVersion){
         upgradeSqls.push('CREATE TABLE IF NOT EXISTS smokes_events (' +
             'tableId INTEGER AUTO_INCREMENT PRIMARY KEY,' + 
             'deviceId VARCHAR(50),' +
-            'timestamp DATETIME,' +
+            'timestamp INTEGER,' +
             'temp1 FLOAT,' +
             'temp2 FLOAT,' +
             'temp3 FLOAT,' +
             'temp4 FLOAT,' +
             'fanstate VARCHAR(20)' +
+            ');');
+            
+        upgradeSqls.push('CREATE INDEX idx_smokes_events_deviceid_timestamp ON smokes_events(' +
+            'deviceId ASC,' +
+            'timestamp ASC' +
+            ');');
+            
+        upgradeSqls.push('CREATE INDEX idx_smokes_events_deviceid ON smokes_events(' +
+            'deviceId ASC' +
+            ');');
+            
+        upgradeSqls.push('CREATE INDEX idx_smokes_events_timestamp ON smokes_events(' +
+            'timestamp  ASC' +
             ');');
     }
     
@@ -73,9 +87,13 @@ function getUpgradeSqls(currentVersion){
 }
 
 function performUpgrade(upgradeSqls) {
-    return db.execTransaction(R.map(function(sql){
-            return db.createStoredQuery(sql, []);
-        }, upgradeSqls));
+    if(upgradeSqls.length){
+        return db.execTransaction(R.map(function(sql){
+                return db.createStoredQuery(sql, []);
+            }, upgradeSqls));
+    } else {
+        return Promise.resolve();
+    }
 }
 
 function upgrade(){

@@ -15,5 +15,21 @@
   "bugs": {
     "url": "https://github.com/efess/HIoS/issues"
   },
-  "homepage": "https://github.com/efess/HIoS#readme"
+  "homepage": "https://github.com/efess/HIoS#readme",
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-bower": "0.0.10",
+    "gulp-notify": "^2.2.0",
+    "gulp-ruby-sass": "^2.0.4"
+  },
+  "dependencies": {
+    "browserify": "^11.2.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "browser": {
+        "jquery": "./src/web/components/jquery/dist/jquery.js",
+        "chart": "./src/web/components/Chart.js/Chart.js"
+    }
+
 }

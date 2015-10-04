@@ -10,6 +10,7 @@ function pausecomp(millis)
   do { curDate = new Date(); }
   while(curDate-date < millis);
 }
+
 router.get('/test', function(req, res) {
     res.send('hello world');
 });
@@ -20,7 +21,7 @@ router.post('/event', function(req, res) {
     
     var tokens = [
         req.body.id,
-        new Date(Date.UTC()),
+        new Date().getTime() / 1000, // seconds since epoch...
         req.body.temp1,
         req.body.temp2,
         0,

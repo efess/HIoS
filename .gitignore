@@ -9,6 +9,7 @@ local_config.json
 *.opensdf
 *.sdf
 .vs/
+.vscode/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -23,3 +24,5 @@ bld/
 *.vsp
 *.vspx
 *.sap
+src/web/components
+src/web/_cache

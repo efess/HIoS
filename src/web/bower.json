@@ -1,0 +1,26 @@
+{
+  "name": "HIoS",
+  "version": "0.0.0",
+  "homepage": "https://github.com/efess/HIoS",
+  "authors": [
+    "Joe <efessel@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "src/server/components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap-sass": "bootstrap-sass-official#~3.3.5",
+    "Chart.js": "chartjs#~1.0.2",
+    "jquery": "~2.1.4"
+  }
+}
