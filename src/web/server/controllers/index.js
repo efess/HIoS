@@ -11,13 +11,14 @@ router.get('/eventstest', function(req, res) {
     var deviceId = req.query.deviceId;
     var fromTime = 0;
     var toTime = 9443881643;
-    var gran = req.query.gran;
+    
     
     var tokens = [
         deviceId,
         fromTime, // seconds since epoch...
         toTime,
-        gran
+        req.query.gran || 3600,
+        req.query.limit || 100,
     ];
     
     smokes.getEvents(tokens)

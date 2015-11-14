@@ -16,7 +16,7 @@ namespace TestSerial
         private Provision _provision = null;
         private Serial _serial = null;
         private StringBuilder _readDisplay = null;
-        private string _currentId = null;
+        private byte[] _currentId = null;
 
         public Form1()
         {
@@ -49,7 +49,7 @@ namespace TestSerial
                 throw new Exception("Must handle exception");
             }
 
-            _serial = new Serial(comboBox1.SelectedItem as string, 9600);
+            _serial = new Serial(comboBox1.SelectedItem as string, 115200);
             _serial.DataRead += (s, e) =>
             {
                 lock (_readDisplay)
@@ -115,7 +115,9 @@ namespace TestSerial
             {
                 ID = _currentId,
                 Password = Encoding.UTF8.GetBytes(textBox2.Text),
-                SSID = wifiItem.SSID
+                SSID = wifiItem.SSID,
+                Host = Encoding.UTF8.GetBytes(textBox4.Text),
+                Port = (UInt16)numericUpDown1.Value
             };
 
             _provision.PushProvision(provisionUpdate);

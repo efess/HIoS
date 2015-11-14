@@ -6,6 +6,7 @@ var cfg = require('./config');
 var db = require('./db');
 var schema = require('./store/schema');
 var path = require('path');
+var mqBroker = require('./mqtt/broker');
 
 function startServer(config){
     // view engine setup
@@ -28,10 +29,14 @@ cfg.load()
     .then(function(config){
         return db.init(config.store)
             .then(schema.upgrade)
-            .then(function(){return startServer(config);},
+            .then(mqBroker.start,
                 function(err){
                     console.log("Failure init db, exiting\n" + err);
                 })
+            .then(function(){return startServer(config);},
+                function(err){
+                    console.log("Failure init mq broker, exiting\n" + err);
+                });
         },
         function(err){
             console.log('Failure loading config, exiting\n' + err);

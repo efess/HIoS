@@ -14,19 +14,22 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="_core">
-      <UniqueIdentifier>{eba5e1bc-46dd-49e1-bc19-7d97f552b808}</UniqueIdentifier>
+      <UniqueIdentifier>{c44579f7-83a4-460b-81a6-8aeb9096086d}</UniqueIdentifier>
     </Filter>
     <Filter Include="_libraries">
-      <UniqueIdentifier>{7d2ac41a-15f0-4103-8227-4d5605958952}</UniqueIdentifier>
+      <UniqueIdentifier>{10f94c90-1d63-4c87-b935-80ece9607490}</UniqueIdentifier>
     </Filter>
     <Filter Include="_libraries\EEPROM">
-      <UniqueIdentifier>{9e047b71-7699-46c5-a6c1-8e70d4d5aae4}</UniqueIdentifier>
+      <UniqueIdentifier>{e58128e8-abe8-4143-a0bf-75c002aff3ac}</UniqueIdentifier>
     </Filter>
     <Filter Include="_libraries\SoftwareSerial">
-      <UniqueIdentifier>{7b675a80-a506-4c88-b1a8-a92e014fcbe3}</UniqueIdentifier>
+      <UniqueIdentifier>{5220393d-4879-4926-95e5-339048269c37}</UniqueIdentifier>
     </Filter>
-    <Filter Include="_libraries\SparkfunESP8266">
-      <UniqueIdentifier>{f246eb7e-8f1e-4edf-8b71-dc489f21c9bd}</UniqueIdentifier>
+    <Filter Include="_libraries\Wire">
+      <UniqueIdentifier>{05df8ec6-b39f-438e-a0b3-186c3c515f0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="_libraries\Wire\utility">
+      <UniqueIdentifier>{f4a8f4ee-dd30-459d-b8e4-46ef88026e0b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -40,6 +43,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="storage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SparkFunESP8266Client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SparkFunESP8266Server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SparkFunESP8266WiFi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Thermo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LiquidCrystal_I2C.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\cores\arduino\Arduino.h">
@@ -105,18 +123,33 @@
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial\SoftwareSerial.h">
       <Filter>_libraries\SoftwareSerial</Filter>
     </ClInclude>
-    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266Client.h">
-      <Filter>_libraries\SparkfunESP8266</Filter>
+    <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\Wire\Wire.h">
+      <Filter>_libraries\Wire</Filter>
     </ClInclude>
-    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266Server.h">
-      <Filter>_libraries\SparkfunESP8266</Filter>
+    <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\Wire\utility\twi.h">
+      <Filter>_libraries\Wire\utility</Filter>
     </ClInclude>
-    <ClInclude Include="lib\SparkFunESP8266\SparkFunESP8266WiFi.h">
-      <Filter>_libraries\SparkfunESP8266</Filter>
+    <ClInclude Include="ESP8266_AT.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="storage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SparkFunESP8266Client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SparkFunESP8266Server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SparkFunESP8266WiFi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Thermo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LiquidCrystal_I2C.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\cores\arduino\abi.cpp">
@@ -194,14 +227,11 @@
     <ClCompile Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\SoftwareSerial\SoftwareSerial.cpp">
       <Filter>_libraries\SoftwareSerial</Filter>
     </ClCompile>
-    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266Client.cpp">
-      <Filter>_libraries\SparkfunESP8266</Filter>
+    <ClCompile Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\Wire\Wire.cpp">
+      <Filter>_libraries\Wire</Filter>
     </ClCompile>
-    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266Server.cpp">
-      <Filter>_libraries\SparkfunESP8266</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\SparkFunESP8266\SparkFunESP8266WiFi.cpp">
-      <Filter>_libraries\SparkfunESP8266</Filter>
+    <ClCompile Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\Wire\utility\twi.c">
+      <Filter>_libraries\Wire\utility</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

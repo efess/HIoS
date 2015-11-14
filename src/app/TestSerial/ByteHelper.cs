@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +15,7 @@ namespace TestSerial
             byte[] byteArray = null;
             int termLen = terminator.Length,
                 i = 0, j = 0;
-            for (i = offset; i < buffer.Length - termLen; i++)
+            for (i = offset; i <= buffer.Length - termLen; i++)
             {
                 for(j = 0; j < termLen; j++)
                 {

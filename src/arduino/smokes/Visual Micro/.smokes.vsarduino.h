@@ -85,6 +85,8 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portModeRegister(P)
 #include <smokes.ino>
 #include <ESP8266_AT.h>
+#include <LiquidCrystal_I2C.cpp>
+#include <LiquidCrystal_I2C.h>
 #include <SparkFunESP8266Client.cpp>
 #include <SparkFunESP8266Client.h>
 #include <SparkFunESP8266Server.cpp>

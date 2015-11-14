@@ -8,7 +8,7 @@ var smokes = {
     },
     //tokens: From, To, DeviceId, Granularity (seconds)
     getEvents: function(tokens) {
-        return db.query("CALL temps (?, ?, ?, ?)", tokens)
+        return db.query("CALL temps (?, ?, ?, ?, ?)", tokens)
             .then(R.head);
     },
 }

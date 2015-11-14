@@ -37,6 +37,10 @@ gulp.task('js', function () {
   });
 
   return b.bundle()
+    .on('error', function(error){
+        console.log('ERROR: ' + error.message);
+        this.emit('end');
+    })
     .pipe(source('app.js'))
     .pipe(buffer())
     // .pipe(sourcemaps.init({loadMaps: true}))

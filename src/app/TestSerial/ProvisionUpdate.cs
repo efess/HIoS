@@ -10,6 +10,9 @@ namespace TestSerial
     {
         public byte[] SSID { get; set; }
         public byte[] Password { get; set; }
-        public string ID { get; set; }
+        public byte[] ID { get; set; }
+
+        public byte[] Host { get; set; }
+        public UInt16 Port { get; set; }
     }
 }

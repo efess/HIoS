@@ -9,7 +9,7 @@ namespace TestSerial
     public class ProvisionInfo
     {
         public bool IsValid { get; private set; }
-        public string ID { get; private set; }
+        public byte[] ID { get; private set; }
         public string Device { get; private set; }
         public byte[] SSID { get; private set; }
         public WifiAp[] AvailableAps { get; private set; }
@@ -54,7 +54,7 @@ namespace TestSerial
                 return;
             }
 
-            ID = Encoding.UTF8.GetString(ByteHelper.GetSubArray(id, 0, id.Length - 2));
+            ID = ByteHelper.GetSubArray(id, 0, id.Length - 2);
 
             var device = ByteHelper.GetTerminatedByte(data, offset, ByteHelper.CRLF_TERM);
             offset += device.Length;
@@ -86,7 +86,8 @@ namespace TestSerial
 
             List<WifiAp> listOfAps = new List<WifiAp>();
             byte[] cwlap = null;
-            while((cwlap = ByteHelper.GetTerminatedByte(data, offset, ByteHelper.CRLF_TERM)).Length >= 4
+            while((cwlap = ByteHelper.GetTerminatedByte(data, offset, ByteHelper.CRLF_TERM)) != null 
+                && cwlap.Length >= 4
                 && cwlap[0] != 'O' && cwlap[1] != 'K')
             {
                 offset += cwlap.Length;

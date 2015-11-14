@@ -1,25 +1,27 @@
 var $ = require('jquery'),
     R = require('ramda'),
+    Promise = require('promise'),
+    ajax = require('./ajax'),
     Chart = require('chart');
 
+var chart = null;
 var smokes = {
     hookupButton: function(){
         $('#clickme').on('click', function(){
             smokes.getEvents();  
         });
-    },
+        $('#granularity').on('change', smokes.getEvents)
+    }, 
     getEvents: function(){
-        $.ajax({
-            url: '/eventstest',
-            data: {
+        var granularity = $('#granularity').val();
+        ajax.get('/eventstest', {
                 deviceId: '43baf2c3-a2f9-4d51-91fa-dff703dc913c',
                 from: '0',
                 to: '3443881643',
-                gran: 3600 // 5 minutes
-            },
-            success: smokes.updateChart,
-            dataType: 'json'
-        }) 
+                gran: granularity,
+                limit: 30
+            })
+            .then(smokes.updateChart);
     },
     updateChart: function(dataset) {
         var formatDate = function(date){
@@ -27,26 +29,33 @@ var smokes = {
             var month = (date.getMonth()+1).toString(),
             day = date.getDate().toString();
             var dateStr = [month.length === 2 ? month : "0" + month, day.length === 2 ? day : "0" + day].join('/');
-            
+              
             var hours = date.getHours() + 1;
             var minutes = date.getMinutes().toString();
             var suffix = 'AM';
             
-            if(hours > 12){
+            if(hours > 12) {
                 hours = hours - 12;
                 suffix = 'PM';   
-            }
+            } 
             minutes = minutes.length === 2 ? minutes : '0' + minutes;
             
             return dateStr + ' ' + hours + ':' + minutes + ' ' + suffix;
-        };
-        var chartSetup = {
-            labels: R.map(function(ts) {
+        };chart
+        dataset = R.reverse(dataset);
+        var labels = R.map(function(ts) { 
                 return formatDate(new Date(ts * 1000));
-            }, R.pluck('timestamp', dataset)),
+            }, R.pluck('timestamp', dataset));
+        var chartOptions = {
+            // Boolean - Whether to animate the chart
+            animation: false,
+            legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+        };
+        var chartData = { 
+            labels: labels,//String - A legend template
             datasets: [
                 {
-                    label: "My First dataset",
+                    label: "Inside Temp",
                     fillColor: "rgba(220,220,220,0.2)",
                     strokeColor: "rgba(220,220,220,1)",
                     pointColor: "rgba(220,220,220,1)",
@@ -56,7 +65,7 @@ var smokes = {
                     data: R.pluck('temp1', dataset)
                 },
                 {
-                    label: "My Second dataset",
+                    label: "Outside Temp",
                     fillColor: "rgba(151,187,205,0.2)",
                     pointColor: "rgba(151,187,205,1)",
                     pointStrokeColor: "#fff",
@@ -66,9 +75,13 @@ var smokes = {
                 }
             ]
         };
+        if(!chart) {
+            var ctx = document.getElementById("temps").getContext("2d");
+            chart = new Chart(ctx).Line(chartData, chartOptions);
+        } else {
+            chart.initialize(chartData);
+        }
         
-        var ctx = document.getElementById("temps").getContext("2d");
-        var tempChart = new Chart(ctx).Line(chartSetup);
     }
 }
 

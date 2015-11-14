@@ -5,15 +5,30 @@
 #include "SparkFunESP8266WiFi.h"
 #include "Thermo.h"
 
+#include <Wire.h> 
+#include "LiquidCrystal_I2C.h"
+
+LiquidCrystal_I2C lcd(0x27,20,4);
 storage::storageDataStruct store;
+
 const int READ_BUF_SIZE = 164;
 char readbuf[READ_BUF_SIZE];
 int count, offset, length; // common buffer vars
+
 Thermo amp1(7,6,5), 
 	amp2(7,6,4);
 
-//const char destServer[] = "192.168.1.91";
+const uint8_t PIN_LED_RED = 10;
+const uint8_t PIN_LED_GREEN = 11;
+const uint8_t PIN_LED_BLUE = 12;
 
+const uint8_t LED_STATE_NONE = 0;
+const uint8_t LED_STATE_DISCONNECTED = 1;
+const uint8_t LED_STATE_CONNECTED = 2;
+const uint8_t LED_STATE_ACTIVITY = 3;
+const uint8_t LED_STATE_SERVER_CONNECT_FAIL = 4;
+
+//const char destServer[] = "192.168.1.91";
 
 const char postStart[] PROGMEM  = "POST /device/smokes/event HTTP/1.1\r\n"
 						"content-type:application/x-www-form-urlencoded;charset=utf-8\r\n"
@@ -22,9 +37,21 @@ const char newLine[] = "\r\n";
 
 void setup() 
 {
+	lcd.init(); 
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+    lcd.print("Hello");
+
+	pinMode(PIN_LED_RED, OUTPUT);
+	pinMode(PIN_LED_GREEN, OUTPUT);
+	pinMode(PIN_LED_BLUE, OUTPUT);
+	setLedState(LED_STATE_DISCONNECTED);
+
 	amp1.setIsFarenheit(1);
 	amp2.setIsFarenheit(1);
+
 	Serial.begin(9600);
+
 	loadStore();
 	initWifi();
 
@@ -65,20 +92,8 @@ void loop(){
 		}
 	}
 	
-	long temp;
-	Serial.println("Reading temp1..");
 	amp1.readTemp();
-	Serial.print("internal: ");
-	Serial.println(amp1.internalTemp);
-	Serial.print("external: ");
-	Serial.println(amp1.externalTemp);
-	
-	Serial.println("Reading temp2..");
 	amp2.readTemp();
-	Serial.print("internal: ");
-	Serial.println(amp2.internalTemp);
-	Serial.print("external: ");
-	Serial.println(amp2.externalTemp);
 
 	Serial.println(F("Tryin to post...."));
 	postValues();
@@ -119,7 +134,7 @@ int readUntilTerminator(unsigned int timeout) {
 
 	while (timeIn + timeout > millis())
 	{
-		if (Serial.available() > 0) 
+		if (Serial.available() > 0)
 		{
 			readbuf[index++] = Serial.read();
 			if (index > 1 && readbuf[index - 1] == 10 && readbuf[index - 2] == 13)
@@ -204,7 +219,7 @@ void clearReadBuf()
 }
 
 
-void printAPList() 
+void printAPList()
 {
 	unsigned long startTime = millis();
 	char command[] = "AT+CWLAP\r\n";
@@ -238,9 +253,11 @@ void postValues()
   // negative on fail (-1=TIMEOUT, -3=FAIL).
   //IPAddress serverIP(192,168,1,91);
   // this makes the status return 0
+  blinkActivity();
   int retVal = client.connect("192.168.1.91", 8080);
   if (retVal <= 0)
   {
+	  setLedState(LED_STATE_SERVER_CONNECT_FAIL);
 	  if(retVal == -1) 
 	  {
 		Serial.println(F("Failed to connect to server.  (TIMEOUT) "));
@@ -262,10 +279,11 @@ void postValues()
   Serial.println(F("Sending HTTP request."));
   short fanstate = 1;
   
-char temp_one[10];
-char temp_two[10];
+	char temp_one[10];
+	char temp_two[10];
   char ipStr[17];
   char lenStr[3];
+  blinkActivity();
 
   IPAddress thisIp = esp8266.localIP();
   sprintf(ipStr, "%d.%d.%d.%d", thisIp[0], thisIp[1], thisIp[2], thisIp[3]);
@@ -274,7 +292,10 @@ char temp_two[10];
 
   dtostrf(amp1.externalTemp, 7, 2, temp_one);
 
+  lcd_print_temps(temp_one, temp_two);
+
   writeProgmem(postStart, &client);
+
   Serial.println(temp_one);
   Serial.println(temp_two);
   sprintf(readbuf, "id=%s&temp1=%s&temp2=%s&fanstate=%d", store.id, temp_one, temp_two, fanstate);
@@ -294,6 +315,7 @@ char temp_two[10];
 
   client.write(newLine);
   client.flush();
+  blinkActivity();
   //client.print("GET /device/smokes/test HTTP/1.1\r\n");
   //client.print("Host: localhost:8080\r\n\r\n");
   //client.print("Connection: keep-alive\r\n\");
@@ -312,6 +334,8 @@ char temp_two[10];
 
 	if (client.connected())
 		client.stop(); // stop() closes a TCP connection.
+  blinkActivity();
+  setLedState(LED_STATE_CONNECTED);
 }
 
 void initWifi() 
@@ -360,10 +384,60 @@ int connectWifi()
 			else if (retVal == -3) {
 				Serial.println(F("Cant connect to network"));
 			}
+			setLedState(LED_STATE_DISCONNECTED);
 			return retVal;
 		}
 		Serial.println(F("Connected"));
 	}
+	setLedState(LED_STATE_CONNECTED);
 
 	return 0;
+}
+
+void blinkActivity()
+{
+	digitalWrite(PIN_LED_BLUE, LOW);
+	digitalWrite(PIN_LED_GREEN, LOW);
+	digitalWrite(PIN_LED_RED, LOW);
+	delay(100);
+	digitalWrite(PIN_LED_GREEN, HIGH);
+}
+
+void setLedState(uint8_t state)
+{
+	digitalWrite(PIN_LED_BLUE, LOW);
+	digitalWrite(PIN_LED_GREEN, LOW);
+	digitalWrite(PIN_LED_RED, LOW);
+	switch(state)
+	{
+		case LED_STATE_ACTIVITY:
+			digitalWrite(PIN_LED_GREEN, HIGH);
+			break;
+		case LED_STATE_DISCONNECTED:
+			digitalWrite(PIN_LED_RED, HIGH);
+			break;
+		case LED_STATE_CONNECTED:
+			digitalWrite(PIN_LED_BLUE, HIGH);
+			break;
+		case LED_STATE_SERVER_CONNECT_FAIL:
+			digitalWrite(PIN_LED_RED, HIGH);
+			digitalWrite(PIN_LED_BLUE, HIGH);
+			break;
+	}
+}
+
+void lcd_print_temps(const char* temp1, const char* temp2)
+{
+	lcd.clear();
+	lcd.setCursor(0, 0); 
+	lcd.print("Outside: ");
+	lcd.print(temp1);
+	lcd.print((char)223);
+	lcd.print("F");
+
+	lcd.setCursor(0, 1); 
+	lcd.print("Inside:  ");
+	lcd.print(temp2);
+	lcd.print((char)223);
+	lcd.print("F");
 }

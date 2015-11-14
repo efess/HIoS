@@ -62,13 +62,25 @@ namespace TestSerial
         }
 
         public async void PushProvision(ProvisionUpdate update)
-        {
+        { 
             var provisionData = new byte[33 + 64 + 65 + 2];
+            var offset = 0;
+            Array.Copy(update.SSID, 0, provisionData, offset, update.SSID.Length);
+            offset += 33;
 
-            Array.Copy(update.SSID, 0, provisionData, 0, update.SSID.Length);
-            Array.Copy(update.Password, 0, provisionData, 33, update.Password.Length);
-            var checkedId = CheckID(update.ID) + '\0';
-            Encoding.UTF8.GetBytes(checkedId, 0, checkedId.Length, provisionData, 33 + 64);
+            Array.Copy(update.Password, 0, provisionData, offset, update.Password.Length);
+            offset += 64;
+
+            var checkedId = CheckID(update.ID);
+            Array.Copy(checkedId, 0, provisionData, offset, checkedId.Length);
+            offset += 16;
+
+            Array.Copy(update.Host, 0, provisionData, offset, update.Host.Length);
+            offset += 16 + 1; // add 1 to account for structure padding?
+
+            var byteArray = BitConverter.GetBytes(update.Port);
+            Array.Copy(byteArray, 0, provisionData, offset, byteArray.Length);
+            offset += byteArray.Length;
 
             provisionData[provisionData.Length - 2] = 0x0D;
             provisionData[provisionData.Length - 1] = 0x0A;
@@ -78,9 +90,9 @@ namespace TestSerial
             await _serial.Write(TOKEN_DONE);
         }
 
-        private string CheckID(string ID)
+        private byte[] CheckID(byte[] ID)
         {
-            return string.IsNullOrEmpty(ID) ? Guid.NewGuid().ToString() : ID;
+            return ID == null || ID.Length != 16 ? Guid.NewGuid().ToByteArray() : ID;
         }
 
         private ProvisionInfo RefreshWifi()
