@@ -1,8 +1,6 @@
 #include "osapi.h"
 #include "os_type.h"
+#include "mqtt.h"
 
-ETSTimer sensorsTimer;
-
-int sensors_stop();
-int sensors_begin();
-int sensors_init();
+int ICACHE_FLASH_ATTR sensors_init(MQTT_Client *mqttClient);
+void ICACHE_FLASH_ATTR sensors_poll_all();

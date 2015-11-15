@@ -5,15 +5,14 @@
 
 DS18B20_Instance temp1;
 DS18B20_Instance temp2;
-
 MQTT_Client *mqttClient;
+ETSTimer sensorTimer;
 
-int ICACHE_FLASH_ATTR sensors_poll_all(void* args)
+
+void ICACHE_FLASH_ATTR sensors_poll_all()
 {
-    os_timer_disarm(&sensorsTimer);
-    //sensors_poll_thermo(&temp1, "garage");
-    //sensors_poll_thermo(&temp2, "temp2");
-    os_timer_arm(&sensorsTimer, 5000, 1);
+    sensors_poll_thermo(&temp1, "garage");
+    sensors_poll_thermo(&temp2, "outside_garage");
 }
 
 int ICACHE_FLASH_ATTR sensors_poll_thermo(DS18B20_Instance *instance, const char *area)
@@ -87,35 +86,29 @@ int ICACHE_FLASH_ATTR sensors_poll_thermo(DS18B20_Instance *instance, const char
     }
 
     float farenheit = celsius * 1.8f + 32;
-    char pubVal[6];
+    char pubVal[8];
+
     printFloat(farenheit, pubVal);
 
-    char pubTop[100];
+    INFO("Farenheit %s\r\n", pubVal);
+    char pubTop[40];
 
     os_sprintf(pubTop, "/home/sensor/%s/temperature", area);
-    MQTT_Publish(mqttClient, pubTop, pubVal, 6, 0, 0);
-    MQTT_Publish(mqttClient, "/home/sensor/0", "hello0", 6, 0, 0);
-    MQTT_Publish(mqttClient, "/home/sensor/5", pubVal, 6, 0, 0);
+    MQTT_Publish(mqttClient, pubTop, pubVal, strlen(pubVal), 0, 0);
 
     return r;
 }
 
-int ICACHE_FLASH_ATTR sensors_init()
+
+int ICACHE_FLASH_ATTR sensors_init(MQTT_Client *mqttClient)
 {
+    os_timer_disarm(&sensorTimer);
+    os_timer_setfn(&sensorTimer, (os_timer_func_t *)sensors_poll_all);
+    os_timer_arm(&sensorTimer, 10000, 1);
+
     temp1.pinNum = 14;
-    //temp2.pinNum = 12;
     ds_init(&temp1);
-    //ds_init(&temp2);
-    os_timer_setfn(&sensorsTimer, (os_timer_func_t *)sensors_poll_all);
-}
 
-int ICACHE_FLASH_ATTR sensors_begin(MQTT_Client *client)
-{
-    mqttClient = &client;
-    //os_timer_arm(&sensorsTimer, 5000, 1);
-}
-
-int ICACHE_FLASH_ATTR sensors_stop()
-{
-    os_timer_disarm(&sensorsTimer);
+    temp2.pinNum = 12;
+    ds_init(&temp2);
 }

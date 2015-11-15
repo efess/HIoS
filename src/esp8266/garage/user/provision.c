@@ -5,10 +5,11 @@
 #include "user_interface.h"
 #include "config.h"
 
-#define READ_BUF_SIZE 256
+PROVISION_CONFIG provisionCfg;
+ETSTimer provisionTimer;
 char readbuf[READ_BUF_SIZE];
 
-void ICACHE_FLASH_ATTR  clearReadBuf()
+void ICACHE_FLASH_ATTR clearReadBuf()
 {
     memset(readbuf, '\0', READ_BUF_SIZE);
 }
@@ -70,7 +71,7 @@ void ICACHE_FLASH_ATTR provision_print_wifi_aps()
     wifi_station_scan(NULL, provision_wifi_scan_cb);
 }
 
-int ICACHE_FLASH_ATTR  readUntilTerminator(uint32 timeout)
+int ICACHE_FLASH_ATTR readUntilTerminator(uint32 timeout)
 {
     uint16 index = 0;
     uint32 timeIn = system_get_time();
@@ -93,7 +94,7 @@ int ICACHE_FLASH_ATTR  readUntilTerminator(uint32 timeout)
 
     return index;
 }
-void ICACHE_FLASH_ATTR  printProvisionInfo()
+void ICACHE_FLASH_ATTR printProvisionInfo()
 {
     uart0_sendStr("provisioninfo\r\n");
     uart0_sendStr(sysCfg.device_id);
@@ -107,7 +108,7 @@ void ICACHE_FLASH_ATTR  printProvisionInfo()
 }
 
 
-int ICACHE_FLASH_ATTR  provision_check_for_command(void)
+int ICACHE_FLASH_ATTR provision_check_for_command(void)
 {
     int readBytes = 0;
 

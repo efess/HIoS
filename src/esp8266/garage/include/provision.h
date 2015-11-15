@@ -1,5 +1,7 @@
 #include "os_type.h"
 
+#define READ_BUF_SIZE 256
+
 typedef struct {
     uint8_t wifiSSID[33];
     uint8_t wifiPassword[64];
@@ -8,8 +10,6 @@ typedef struct {
     uint16_t port;
 } PROVISION_CONFIG;
 
-PROVISION_CONFIG provisionCfg;
 
-int provision_check_for_command(void);
-ETSTimer provisionTimer;
-void provision_checkUart(void *args);
+int ICACHE_FLASH_ATTR provision_check_for_command(void);
+void ICACHE_FLASH_ATTR provision_checkUart(void *args);

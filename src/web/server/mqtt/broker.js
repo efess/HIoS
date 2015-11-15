@@ -3,26 +3,26 @@ var mosca = require('mosca');
 var broker = {
     start: function(){
         
-        // var pubsubsettings = {
-        //     type: 'redis',
-        //     redis: require('redis'),
-        //     db: 0,
-        //     port: 6379,
-        //     return_buffers: true, // to handle binary payloads
-        //     host: "localhost"
-        // };
-        
-        var mongobackend = {
-            //using ascoltatore
-            type: 'mongo',
-            url: 'mongodb://localhost:27017/mqtt',
-            pubsubCollection: 'ascoltatori',
-            mongo: {}
+        var pubsubsettings = {
+            type: 'redis',
+            redis: require('redis'),
+            db: 0,
+            port: 6379,
+            return_buffers: true, // to handle binary payloads
+            host: "localhost"
         };
+        
+        // var pubsubsettings = {
+        //     //using ascoltatore
+        //     type: 'mongo',
+        //     url: 'mongodb://localhost:27017/mqtt',
+        //     pubsubCollection: 'ascoltatori',
+        //     mongo: {}
+        // };
                     
         var settings = {
             port: 1880,
-            backend: mongobackend
+            backend: pubsubsettings
         };
         
         var server = new mosca.Server(settings);

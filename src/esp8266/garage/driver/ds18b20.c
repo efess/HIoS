@@ -324,7 +324,6 @@ float ICACHE_FLASH_ATTR celsiusFarenheit(float celsius)
 }
 
 void ICACHE_FLASH_ATTR printFloat(float val, char *buff) {
-   char smallBuff[16];
    int val1 = (int) val;
    unsigned int val2;
    if (val < 0) {
@@ -333,10 +332,8 @@ void ICACHE_FLASH_ATTR printFloat(float val, char *buff) {
       val2 = (int) (100.0 * val) % 100;
    }
    if (val2 < 10) {
-      os_sprintf(smallBuff, "%i.0%u", val1, val2);
+      os_sprintf(buff, "%i.0%u", val1, val2);
    } else {
-      os_sprintf(smallBuff, "%i.%u", val1, val2);
+      os_sprintf(buff, "%i.%u", val1, val2);
    }
-
-   strcat(buff, smallBuff);
 }

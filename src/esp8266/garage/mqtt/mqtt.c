@@ -280,13 +280,10 @@ void ICACHE_FLASH_ATTR mqtt_timer(void *arg)
 
 			client->sendTimeout = MQTT_SEND_TIMOUT;
 			INFO("MQTT: Sending, type: %d, id: %04X\r\n",client->mqtt_state.pending_msg_type, client->mqtt_state.pending_msg_id);
-			if(client->security){
-                INFO("MQTT: OH trying to send secure, wtf?\r\n");
-                INFO("security-> %i\r\n", client->security);
+            if(client->security){
                 espconn_secure_send(client->pCon, client->mqtt_state.outbound_message->data, client->mqtt_state.outbound_message->length);
 			}
             else{
-                INFO("MQTT: Sending length: %i, data: %s\r\n", client->mqtt_state.outbound_message->length, client->mqtt_state.outbound_message->data);
                 espconn_send(client->pCon, client->mqtt_state.outbound_message->data, client->mqtt_state.outbound_message->length);
 			}
 
@@ -348,13 +345,10 @@ mqtt_tcpclient_connect_cb(void *arg)
 
 	client->sendTimeout = MQTT_SEND_TIMOUT;
 	INFO("MQTT: Sending, type: %d, id: %04X\r\n",client->mqtt_state.pending_msg_type, client->mqtt_state.pending_msg_id);
-	if(client->security){
-        INFO("1MQTT: OH trying to send secure, wtf?\r\n");
-        INFO("1security-> %i\r\n", client->security);
+    if(client->security){
 		espconn_secure_sent(client->pCon, client->mqtt_state.outbound_message->data, client->mqtt_state.outbound_message->length);
 	}
-	else{
-        INFO("1MQTT: Sending length: %i \r\n", client->mqtt_state.outbound_message->length);
+    else{
 		espconn_sent(client->pCon, client->mqtt_state.outbound_message->data, client->mqtt_state.outbound_message->length);
 	}
 
@@ -468,16 +462,11 @@ MQTT_Task(os_event_t *e)
 		}
 		if(QUEUE_Gets(&client->msgQueue, dataBuffer, &dataLen, MQTT_BUF_SIZE) == 0){
 			client->mqtt_state.pending_msg_type = mqtt_get_type(dataBuffer);
-			client->mqtt_state.pending_msg_id = mqtt_get_id(dataBuffer, dataLen);
-
-            INFO("trying to send\r\n");
-            INFO(dataBuffer);
-            INFO("\r\n");
+            client->mqtt_state.pending_msg_id = mqtt_get_id(dataBuffer, dataLen);
 
 			client->sendTimeout = MQTT_SEND_TIMOUT;
 			INFO("MQTT: Sending, type: %d, id: %04X\r\n",client->mqtt_state.pending_msg_type, client->mqtt_state.pending_msg_id);
             if(client->security){
-                INFO("2security-> %i\r\n", client->security);
                 espconn_secure_send(client->pCon, dataBuffer, dataLen);
 			}
             else{
@@ -627,12 +616,11 @@ MQTT_Connect(MQTT_Client *mqttClient)
 void ICACHE_FLASH_ATTR
 MQTT_Disconnect(MQTT_Client *mqttClient)
 {
-	if(mqttClient->pCon){
-        INFO("Free memory, but not really\r\n");
-//		INFO("Free memory\r\n");
-//		if(mqttClient->pCon->proto.tcp)
-//			os_free(mqttClient->pCon->proto.tcp);
-//		os_free(mqttClient->pCon);
+    if(mqttClient->pCon){
+        INFO("Free memory\r\n");
+        if(mqttClient->pCon->proto.tcp)
+            os_free(mqttClient->pCon->proto.tcp);
+        os_free(mqttClient->pCon);
 		mqttClient->pCon = NULL;
 	}
 
