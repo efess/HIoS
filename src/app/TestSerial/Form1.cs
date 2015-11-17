@@ -49,7 +49,7 @@ namespace TestSerial
                 throw new Exception("Must handle exception");
             }
 
-            _serial = new Serial(comboBox1.SelectedItem as string, 115200);
+            _serial = new Serial(comboBox1.SelectedItem as string, 9600);
             _serial.DataRead += (s, e) =>
             {
                 lock (_readDisplay)

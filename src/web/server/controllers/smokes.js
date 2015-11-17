@@ -1,8 +1,14 @@
 var express = require('express'),
     Promise = require('promise'),
     smokes = require('../model/smokes'),
-    router = express.Router();
-    
+    router = express.Router(),
+    uuid = require('node-uuid');
+
+function padLeft(totalLength, padChar, str){
+    var realStr = str + "";
+    return Array(totalLength + 1 - realStr.length).join(padChar) + realStr;
+}
+
 function pausecomp(millis)
  {
   var date = new Date();
@@ -19,11 +25,17 @@ router.post('/event', function(req, res) {
     pausecomp(100);
     console.log(req.body);
     
+    var returnBody = "smokes_update:" + 
+        "grill:" + padLeft(5, " ", 95) + 
+        "meat:" + padLeft(5, " ", 185) +
+        "END";
+    var deviceId = uuid.unparse(new Buffer(req.body.id));
+    
     var tokens = [
-        req.body.id,
+        deviceId,
         new Date().getTime() / 1000, // seconds since epoch...
-        req.body.temp1,
-        req.body.temp2,
+        isNaN(req.body.temp1) ? null : req.body.temp1,
+        isNaN(req.body.temp2) ? null : req.body.temp2,
         0,
         0,
         req.body.fanstate
@@ -31,7 +43,7 @@ router.post('/event', function(req, res) {
     
     smokes.addEvent(tokens)
         .then(function(){
-            res.send('OK');
+            res.send(returnBody);
         }, function(){
             res.send('ERROR');
         });

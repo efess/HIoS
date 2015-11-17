@@ -15,7 +15,7 @@ var smokes = {
     getEvents: function(){
         var granularity = $('#granularity').val();
         ajax.get('/eventstest', {
-                deviceId: '43baf2c3-a2f9-4d51-91fa-dff703dc913c',
+                deviceId: 'efbfbd0d-0d0f-efbf-bddd-8444efbfbd1a',
                 from: '0',
                 to: '3443881643',
                 gran: granularity,

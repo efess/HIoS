@@ -80,8 +80,11 @@ bool ESP8266Class::test()
 {
 	sendCommand(ESP8266_TEST); // Send AT
 
-	if (readForResponse(RESPONSE_OK, COMMAND_RESPONSE_TIMEOUT) > 0)
+	if (readForResponse(RESPONSE_OK, COMMAND_RESPONSE_TIMEOUT) > 0){
 		return true;
+	}
+	Serial.println("buffer:");
+	Serial.write(esp8266RxBuffer);
 	
 	return false;
 }
@@ -265,6 +268,7 @@ int16_t ESP8266Class::listAP(bufferCallback cb)
 	
 	return 1;
 }
+
 int16_t ESP8266Class::getAP(char * ssid)
 {
 	sendCommand(ESP8266_CONNECT_AP, ESP8266_CMD_QUERY); // Send "AT+CWJAP?"
@@ -808,7 +812,7 @@ unsigned int ESP8266Class::readByteToBuffer()
 {
 	// Read the data in
 	char c = _serial->read();
-	
+	Serial.write(c);
 	// Store the data in the buffer
 	esp8266RxBuffer[bufferHead] = c;
 	//! TODO: Don't care if we overflow. Should we? Set a flag or something?

@@ -14,22 +14,22 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="_core">
-      <UniqueIdentifier>{c44579f7-83a4-460b-81a6-8aeb9096086d}</UniqueIdentifier>
+      <UniqueIdentifier>{e69bb6e2-9ec7-4194-8e33-4fc7f6268942}</UniqueIdentifier>
     </Filter>
     <Filter Include="_libraries">
-      <UniqueIdentifier>{10f94c90-1d63-4c87-b935-80ece9607490}</UniqueIdentifier>
+      <UniqueIdentifier>{27c092ee-3d7c-49dc-a45e-293be3120169}</UniqueIdentifier>
     </Filter>
     <Filter Include="_libraries\EEPROM">
-      <UniqueIdentifier>{e58128e8-abe8-4143-a0bf-75c002aff3ac}</UniqueIdentifier>
+      <UniqueIdentifier>{41374fb9-4f15-47f8-8c49-01425f180668}</UniqueIdentifier>
     </Filter>
     <Filter Include="_libraries\SoftwareSerial">
-      <UniqueIdentifier>{5220393d-4879-4926-95e5-339048269c37}</UniqueIdentifier>
+      <UniqueIdentifier>{4834ea3b-3ffe-4b20-8e03-f71c85e45339}</UniqueIdentifier>
     </Filter>
     <Filter Include="_libraries\Wire">
-      <UniqueIdentifier>{05df8ec6-b39f-438e-a0b3-186c3c515f0f}</UniqueIdentifier>
+      <UniqueIdentifier>{654269bf-4052-4b9e-b068-68c74ae4666d}</UniqueIdentifier>
     </Filter>
     <Filter Include="_libraries\Wire\utility">
-      <UniqueIdentifier>{f4a8f4ee-dd30-459d-b8e4-46ef88026e0b}</UniqueIdentifier>
+      <UniqueIdentifier>{ada5fe48-48e8-4359-b147-5b9b247b49a2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -58,6 +58,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LiquidCrystal_I2C.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ESP8266_AT.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\cores\arduino\Arduino.h">
@@ -114,7 +117,7 @@
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\cores\arduino\WString.h">
       <Filter>_core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\variants\standard\pins_arduino.h">
+    <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\variants\eightanaloginputs\pins_arduino.h">
       <Filter>_core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\EEPROM\EEPROM.h">
@@ -128,9 +131,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\..\bin\arduino\hardware\arduino\avr\libraries\Wire\utility\twi.h">
       <Filter>_libraries\Wire\utility</Filter>
-    </ClInclude>
-    <ClInclude Include="ESP8266_AT.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

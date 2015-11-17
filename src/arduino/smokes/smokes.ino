@@ -8,15 +8,31 @@
 #include <Wire.h> 
 #include "LiquidCrystal_I2C.h"
 
+#define SOFT_SERIAL_TX			2  // Arduino TX pin to ESP RX
+#define SOFT_SERIAL_RX			3  // Arduino RX pin from ESP TX
+
+#define THERMO_CLK 4
+#define THERMO_DATA 5
+#define TEMP1_SELECT 6
+#define TEMP2_SELECT 7
+#define FAN_PWM 9
+
+#define LCD_TEMP_TEST_MODE 0
+#define FAN_TEST_MODE 0
+#define BUFFER_SIZE 164
+
+extern unsigned int __bss_end;
+extern unsigned int __heap_start;
+extern void *__brkval;
+
 LiquidCrystal_I2C lcd(0x27,20,4);
 storage::storageDataStruct store;
 
-const int READ_BUF_SIZE = 164;
-char readbuf[READ_BUF_SIZE];
+char buffer[BUFFER_SIZE];
 int count, offset, length; // common buffer vars
 
-Thermo amp1(7,6,5), 
-	amp2(7,6,4);
+Thermo	amp_smoker(THERMO_CLK, THERMO_DATA, TEMP1_SELECT), 
+		amp_meat(THERMO_CLK, THERMO_DATA, TEMP2_SELECT);
 
 const uint8_t PIN_LED_RED = 10;
 const uint8_t PIN_LED_GREEN = 11;
@@ -29,37 +45,65 @@ const uint8_t LED_STATE_ACTIVITY = 3;
 const uint8_t LED_STATE_SERVER_CONNECT_FAIL = 4;
 
 //const char destServer[] = "192.168.1.91";
-
+const char clear_lcd_row[] PROGMEM = "                    ";
 const char postStart[] PROGMEM  = "POST /device/smokes/event HTTP/1.1\r\n"
 						"content-type:application/x-www-form-urlencoded;charset=utf-8\r\n"
 						"host: ";
 const char newLine[] = "\r\n";
 
+int fan_speeds[5] = {0, 70, 120, 190, 255};
+int fan_index;
+int target_smoker_temp = 230;
+int target_meat_temp = 180;
+
+float temp_average_smoker;
+float temp_average_meat;
+char temp_smoker[7];
+char temp_meat[7];
+
+#define TEMP_AVERAGE_COUNT 5
+
 void setup() 
 {
+	pinMode(FAN_PWM, OUTPUT);
+	analogWrite(FAN_PWM, 0);
+
 	lcd.init(); 
     lcd.backlight();
-    lcd.setCursor(0, 0);
-    lcd.print("Hello");
+    lcd.setCursor(0, 1);
+    lcd.print(F("   Smoker Stoker"));
+    lcd.setCursor(0, 2);
+    lcd.print(F("   Starting...  "));
 
-	pinMode(PIN_LED_RED, OUTPUT);
-	pinMode(PIN_LED_GREEN, OUTPUT);
-	pinMode(PIN_LED_BLUE, OUTPUT);
-	setLedState(LED_STATE_DISCONNECTED);
-
-	amp1.setIsFarenheit(1);
-	amp2.setIsFarenheit(1);
+	amp_smoker.setIsFarenheit(1);
+	amp_meat.setIsFarenheit(1);
 
 	Serial.begin(9600);
 
 	loadStore();
+	
+    lcd.setCursor(0, 2);
+    lcd.print(F("   Init Wifi...  "));
 	initWifi();
+	
 
 	if (strlen(store.id) == 0 || strlen(store.wifiSSID) == 0)
 	{
+		lcd.setCursor(0, 2);
+		lcd.print(F("No setup found -  "));
+		lcd.setCursor(0, 3);
+		lcd.print(F("Waiting for provision..."));
+		Serial.println(F("No setup found, entering provision mode. "));	
 		provisionMode();
 	}
+    lcd.setCursor(0, 2);
+    lcd.print(F("   Connecting to"));
+    lcd.setCursor(0, 3);
+	lcd.print(store.wifiSSID);
+	
 	connectWifi();
+
+	lcd.clear();
 }
 
 void printProvisionInfo() 
@@ -75,32 +119,89 @@ void printProvisionInfo()
 	Serial.println(F("done"));
 }
 
-void loop(){
+void loop()
+{
+	if(LCD_TEMP_TEST_MODE)
+	{
+		/*amp_smoker.readTemp();
+		amp_meat.readTemp();
+		char temp_smoker[6];
+		char temp_meat[6];
+
+		dtostrf(amp_meat.externalTemp, 6, 2, temp_meat);
+
+		dtostrf(amp_smoker.externalTemp, 6, 2, temp_smoker);
+		lcd_print_temps(temp_smoker, temp_meat);
+		delay(500);
+		return;*/
+	} 
+	else if(FAN_TEST_MODE)
+	{
+		/*fan_index++;
+		fan_index = fan_index % 5;
+
+		analogWrite(FAN_PWM, fan_speeds[fan_index]);
+		
+		char fan_status[16];
+		sprintf(fan_status, "fan speed: %d", fan_speeds[fan_index]);
+
+		lcd.setCursor(0, 0); 
+		lcd.print(fan_status);
+
+		delay(3000);
+
+		return;*/
+	}
 
 	if(connectWifi() < 0)
 	{
 		return;
 	}
-
 	if (Serial.available() > 0)
 	{
 		readUntilTerminator(5000);
-		if (strcmp(readbuf, "initprovision") == 0)
+		if (strcmp(buffer, "initprovision") == 0)
 		{
 			printProvisionInfo();
 			provisionMode();
 		}
 	}
+
+	// read 5 times, than post mean
+	readTemps();
+
+	getTempValue(temp_average_meat, temp_meat);
+	getTempValue(temp_average_smoker, temp_smoker);
+	Serial.print(F("smoker: "));
+	Serial.println(temp_smoker);
+	Serial.print(F("meat: "));
+	Serial.println(temp_meat);
+
 	
-	amp1.readTemp();
-	amp2.readTemp();
+	Serial.println(F("Adjust fan"));
+	adjustFan();
 
-	Serial.println(F("Tryin to post...."));
+	lcd_print_values();
+
+	Serial.println(F("Posting to server"));
 	postValues();
-
-	delay(10000);
+	
+	Serial.print(F("Free Memory: "));
+	Serial.println(freeMemory());
+	Serial.println(F("--------------------"));
 }
 
+int freeMemory()
+{
+  int free_memory;
+
+  if((int)__brkval == 0)
+     free_memory = ((int)&free_memory) - ((int)&__bss_end);
+  else
+    free_memory = ((int)&free_memory) - ((int)__brkval);
+
+  return free_memory;
+}
 void writeProgmem(
 	const char *progMem, 
 	Print* print)
@@ -110,10 +211,10 @@ void writeProgmem(
 	while(offset < length)
 	{
 		count = min(length - offset, 128); //postLen - 128;
-		memcpy_P(readbuf, progMem + offset, count);
+		memcpy_P(buffer, progMem + offset, count);
 
 		//Serial.write(readbuf, count);
-		print->write(readbuf, count);
+		print->write(buffer, count);
 		
 		offset = offset + count;
 	}
@@ -136,8 +237,8 @@ int readUntilTerminator(unsigned int timeout) {
 	{
 		if (Serial.available() > 0)
 		{
-			readbuf[index++] = Serial.read();
-			if (index > 1 && readbuf[index - 1] == 10 && readbuf[index - 2] == 13)
+			buffer[index++] = Serial.read();
+			if (index > 1 && buffer[index - 1] == 10 && buffer[index - 2] == 13)
 			{
 				break;
 			}
@@ -147,27 +248,22 @@ int readUntilTerminator(unsigned int timeout) {
 	return index;
 }
 
-void setupID() 
-{
-
-}
-
 void provisionMode()
 {
 	int readBytes = 0;
 	while (true) 
 	{
-		clearReadBuf();
+		clearBuffer();
 
 		while (!Serial.available())
 			;
 		readBytes = readUntilTerminator(5000);
 
-		if (strcmp(readbuf, "initprovision") == 0)
+		if (strcmp(buffer, "initprovision") == 0)
 		{
 			printProvisionInfo();
 		}
-		else if (strcmp(readbuf, "exitprovision") == 0)
+		else if (strcmp(buffer, "exitprovision") == 0)
 		{
 			if (strlen(store.id) == 0 || strlen(store.wifiSSID) == 0)
 			{
@@ -178,15 +274,15 @@ void provisionMode()
 				return;
 			}
 		}
-		else if (strcmp(readbuf, "provision") == 0)
+		else if (strcmp(buffer, "provision") == 0)
 		{
-			clearReadBuf();
+			clearBuffer();
 			readBytes = readUntilTerminator(5000);
 
 			if (readBytes == 164)
 			{
 				/* skip control (2 bytes) */
-				memcpy(&store, readbuf, sizeof(store) - 2);
+				memcpy(&store, buffer, sizeof(store) - 2);
 
 				if (strlen(store.wifiSSID) == 0) {
 					Serial.println(F("missing-req SSID"));
@@ -213,9 +309,9 @@ void provisionMode()
 	}
 }
 
-void clearReadBuf()
+void clearBuffer()
 {
-	memset(readbuf, '\0', READ_BUF_SIZE);
+	memset(buffer, '\0', BUFFER_SIZE);
 }
 
 
@@ -240,111 +336,202 @@ void printAPList()
 	}
 }
 
+void getTempValue(float value, char* buffer)
+{
+	if(!tempWithinRange(value))
+	{
+		sprintf(buffer, "   ---");
+	} 
+	else 
+	{
+		dtostrf(value, 6, 2, buffer);
+	}
+}
+
+void parseValues()
+{
+	char* strLocation;
+	char value[5];
+	int intValue;
+
+	if(!strstr(buffer, "smokes_update:")){
+		Serial.println(("No update found in response"));
+		return;
+	}
+	if(strLocation = strstr(buffer, "grill:"))
+	{
+		strLocation += 6;
+		if(strLocation && (strLocation + 5))
+		{
+			strncpy(value,strLocation,5);
+			target_smoker_temp = atoi(value);
+		}
+	}
+	if(strLocation = strstr(buffer, "meat:"))
+	{
+		strLocation += 5;
+		if(strLocation && (strLocation + 5))
+		{
+			strncpy(value,strLocation,5);
+			target_meat_temp = atoi(value);
+		}
+	}
+}
+
+void readTemps()
+{
+	float temp_total_smoker;
+	float temp_total_meat;
+	// sample TEMP_AVERAGE_COUNT and average
+	for(offset = 0; offset < TEMP_AVERAGE_COUNT; offset++)
+	{
+		amp_smoker.readTemp();
+		amp_meat.readTemp();
+
+		temp_total_smoker += amp_smoker.externalTemp;
+		temp_total_meat += amp_meat.externalTemp;
+
+		getTempValue(amp_meat.externalTemp, temp_meat);
+		getTempValue(amp_smoker.externalTemp, temp_smoker);
+		Serial.print(F("smoker: "));
+		Serial.println(temp_smoker);
+		Serial.print(F("meat: "));
+		Serial.println(temp_meat);
+
+		delay(500);
+	}
+
+	temp_average_meat = temp_total_meat / TEMP_AVERAGE_COUNT;
+	temp_average_smoker = temp_total_smoker / TEMP_AVERAGE_COUNT;
+}
+uint8_t tempWithinRange(float temp)
+{
+	return temp < 999 && temp > -99;
+}
+
+void adjustFan()
+{
+	int difference;
+	if(temp_average_smoker > target_smoker_temp)
+	{
+		fan_index = 0;
+	}
+	else 
+	{
+		// Fan ON
+		difference = target_smoker_temp - temp_average_smoker;
+		if(difference < 2)
+		{
+			fan_index = 1;
+		} 
+		else if(difference < 3)
+		{
+			fan_index = 2;
+		}
+		else if(difference < 7)
+		{
+			fan_index = 3;
+		}
+		else
+		{
+			fan_index = 4;
+		}
+	}
+
+	analogWrite(FAN_PWM, fan_speeds[fan_index]);
+}
+
 void postValues()
 {
-  // To use the ESP8266 as a TCP client, use the 
-  // ESP8266Client class. First, create an object:
-  ESP8266Client client;
+	// closing any connections that still persist
+	esp8266.close(5);
+	
+	ESP8266Client client;
+	char strBuf[20];
 
-  // ESP8266Client connect([server], [port]) is used to 
-  // connect to a server (const char * or IPAddress) on
-  // a specified port.
-  // Returns: 1 on success, 2 on already connected,
-  // negative on fail (-1=TIMEOUT, -3=FAIL).
-  //IPAddress serverIP(192,168,1,91);
-  // this makes the status return 0
-  blinkActivity();
-  int retVal = client.connect("192.168.1.91", 8080);
-  if (retVal <= 0)
-  {
-	  setLedState(LED_STATE_SERVER_CONNECT_FAIL);
-	  if(retVal == -1) 
-	  {
+	int retVal = client.connect("192.168.1.91", 8080);
+	if (retVal <= 0)
+	{
+		if(retVal == -1) 
+		{
 		Serial.println(F("Failed to connect to server.  (TIMEOUT) "));
+		lcd_print_connection_status(F("Wifi Failed(TIMEOUT)"));
 		return;
-	  } else if(retVal == -3) 
-	  {
+		} else if(retVal == -3) 
+		{
 		Serial.println(F("Failed to connect to server.  (GENERAL) "));
+		lcd_print_connection_status(F("Wifi Failed(GENERAL)"));
 		return;
-	  } else{
+		} else{
 		Serial.print(F("Failed to connect to server.  "));
+		lcd_print_connection_status(F("Wifi Failed(?)"));
+		// close all connections.
+		esp8266.close(5);
+
 		Serial.println(retVal);
 		return;
-	  }
-  } else 
-  {
+		}
+	} else 
+	{
 		Serial.println(F("Connected to server."));
-  }
+	}
+	sprintf(strBuf, "Wifi %.14s", store.wifiSSID);
+	lcd_print_connection_status(strBuf);
+	Serial.println(F("Sending HTTP request."));  
+	char lenStr[3];
+
+	IPAddress thisIp = esp8266.localIP();
   
-  Serial.println(F("Sending HTTP request."));
-  short fanstate = 1;
+	sprintf(strBuf, "%d.%d.%d.%d", thisIp[0], thisIp[1], thisIp[2], thisIp[3]);
   
-	char temp_one[10];
-	char temp_two[10];
-  char ipStr[17];
-  char lenStr[3];
-  blinkActivity();
+	writeProgmem(postStart, &client);
+	Serial.println();
+	sprintf(buffer, "id=%s&temp1=%s&temp2=%s&fanstate=%d", store.id, temp_smoker, temp_meat, fan_index);
+	Serial.println(buffer);
+	length = strlen(buffer);
+	sprintf(lenStr, "%d", length);
 
-  IPAddress thisIp = esp8266.localIP();
-  sprintf(ipStr, "%d.%d.%d.%d", thisIp[0], thisIp[1], thisIp[2], thisIp[3]);
+	client.write(strBuf);
+	client.write(newLine);
+	client.write("content-length:");
+	client.write(lenStr);
 
-  dtostrf(amp2.externalTemp, 7, 2, temp_two);
+	client.write(newLine);
+	client.write(newLine);
 
-  dtostrf(amp1.externalTemp, 7, 2, temp_one);
+	client.write(buffer);
 
-  lcd_print_temps(temp_one, temp_two);
+	client.write(newLine);
 
-  writeProgmem(postStart, &client);
+	clearBuffer();
 
-  Serial.println(temp_one);
-  Serial.println(temp_two);
-  sprintf(readbuf, "id=%s&temp1=%s&temp2=%s&fanstate=%d", store.id, temp_one, temp_two, fanstate);
-  Serial.println(readbuf);
-  length = strlen(readbuf);
-  sprintf(lenStr, "%d", length);
+	offset = 0;
+	while (client.available()){
+		buffer[offset++] = client.read();
+		if(offset >= BUFFER_SIZE){
+			Serial.println(F("read overflowing buffer!!"));
+			offset = 0;
+		}
+	}
+	Serial.print(F("Read buffer: "));
+	Serial.println(buffer);
+	Serial.println(F("End read buffer"));
 
-  client.write(ipStr);
-  client.write(newLine);
-  client.write("content-length:");
-  client.write(lenStr);
-
-  client.write(newLine);
-  client.write(newLine);
-
-  client.write(readbuf);
-
-  client.write(newLine);
-  client.flush();
-  blinkActivity();
-  //client.print("GET /device/smokes/test HTTP/1.1\r\n");
-  //client.print("Host: localhost:8080\r\n\r\n");
-  //client.print("Connection: keep-alive\r\n\");
-
-
-  // print and write can be used to send data to a connected
-  // client connection.
-
-  // available() will return the number of characters
-  // currently in the receive buffer.
-  while (client.available())
-    Serial.write(client.read()); // read() gets the FIFO char
-  
-  // connected() is a boolean return value - 1 if the 
-  // connection is active, 0 if it's closed.
-
+	parseValues();
+	
 	if (client.connected())
 		client.stop(); // stop() closes a TCP connection.
-  blinkActivity();
-  setLedState(LED_STATE_CONNECTED);
 }
 
 void initWifi() 
 {
+	Serial.println(F("try to load Wifi...."));
 	while(!esp8266.begin(9600))
 	{
 		Serial.println(F("Error talking to ESP8266. Trying again in 5 seconds."));
 		delay(5000);
 	}
+
 	Serial.println(F("ESP8266 init"));
 }
 
@@ -384,60 +571,46 @@ int connectWifi()
 			else if (retVal == -3) {
 				Serial.println(F("Cant connect to network"));
 			}
-			setLedState(LED_STATE_DISCONNECTED);
 			return retVal;
 		}
 		Serial.println(F("Connected"));
 	}
-	setLedState(LED_STATE_CONNECTED);
 
 	return 0;
 }
 
-void blinkActivity()
+void lcd_print_values()
 {
-	digitalWrite(PIN_LED_BLUE, LOW);
-	digitalWrite(PIN_LED_GREEN, LOW);
-	digitalWrite(PIN_LED_RED, LOW);
-	delay(100);
-	digitalWrite(PIN_LED_GREEN, HIGH);
-}
-
-void setLedState(uint8_t state)
-{
-	digitalWrite(PIN_LED_BLUE, LOW);
-	digitalWrite(PIN_LED_GREEN, LOW);
-	digitalWrite(PIN_LED_RED, LOW);
-	switch(state)
-	{
-		case LED_STATE_ACTIVITY:
-			digitalWrite(PIN_LED_GREEN, HIGH);
-			break;
-		case LED_STATE_DISCONNECTED:
-			digitalWrite(PIN_LED_RED, HIGH);
-			break;
-		case LED_STATE_CONNECTED:
-			digitalWrite(PIN_LED_BLUE, HIGH);
-			break;
-		case LED_STATE_SERVER_CONNECT_FAIL:
-			digitalWrite(PIN_LED_RED, HIGH);
-			digitalWrite(PIN_LED_BLUE, HIGH);
-			break;
-	}
-}
-
-void lcd_print_temps(const char* temp1, const char* temp2)
-{
-	lcd.clear();
 	lcd.setCursor(0, 0); 
-	lcd.print("Outside: ");
-	lcd.print(temp1);
+	lcd.print(clear_lcd_row);
+	lcd.print(F("Grill:"));
+	lcd.print(temp_smoker);
 	lcd.print((char)223);
-	lcd.print("F");
-
+	lcd.print(F("F T:"));
+	sprintf(buffer, "%3d", target_smoker_temp);
+	lcd.print(buffer);
+	
 	lcd.setCursor(0, 1); 
-	lcd.print("Inside:  ");
-	lcd.print(temp2);
+	lcd.print(clear_lcd_row);
+	lcd.print(F("Meat: "));
+	lcd.print(temp_meat);	
 	lcd.print((char)223);
-	lcd.print("F");
+	lcd.print(F("F T:"));
+	sprintf(buffer, "%3d", target_meat_temp);
+	lcd.print(buffer);
+
+	lcd.setCursor(0, 2); 
+	lcd.print(F("Fan speed: "));
+	lcd.print(fan_index);
+}
+
+void lcd_print_connection_status(const char* status)
+{
+	lcd.setCursor(0, 3); 
+	lcd.print(status);
+}
+void lcd_print_connection_status(const __FlashStringHelper *status)
+{
+	lcd.setCursor(0, 3); 
+	lcd.print(status);
 }
