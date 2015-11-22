@@ -20,7 +20,8 @@ gulp.task('css', function(){
         cacheLocation: './_cache',
         loadPath: [ 
             './resources/sass',
-            config.bowerDir + '/bootstrap-sass/assets/stylesheets'
+            config.bowerDir + '/bootstrap/scss'
+            //config.bowerDir + '/bootstrap-sass/assets/stylesheets'
         ]
     })
     .on('error', notify.onError(function(err){

@@ -14,7 +14,6 @@ public:
 	void setIsFarenheit(bool);
 	float externalTemp;
 	float internalTemp;
-
 private:
 	const unsigned int clockDelayuS = 1;
 	uint8_t clock;

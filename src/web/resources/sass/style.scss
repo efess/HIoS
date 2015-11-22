@@ -1,5 +1,82 @@
 @import 'bootstrap';
 
 body {
-    background:    
+    background: white;
+    font-size: 16px;
+}
+.hidden {
+    display: none;
+}
+
+.grill-temp-block {
+    width: 100%;
+    height: 100%;
+    clear: both;
+}
+
+.meat-temp-block {
+    width: 100%;
+    height: 100%;
+    clear: both;
+}
+
+.temp-now {
+    width: 300px;
+    text-align: center;
+}
+
+.temp-now-value {
+    @media(min-width:34em){
+        font-size: 12rem;
+    }
+    @media(min-width:48em){
+        font-size: 10rem;
+    }
+    @media(min-width:62em){
+        font-size: 6rem;
+    }
+    @media(min-width:75em){
+        font-size: 6rem;
+    }
+}
+
+.temp-half {
+    padding: 10px;
+    width: 100px;
+    @media(min-width:34em){
+        font-size: 8rem;
+    }
+    @media(min-width:48em){
+        font-size: 6rem;
+        width: 200px;
+    }
+    @media(min-width:62em){
+        font-size: 3rem;
+    }
+    @media(min-width:75em){
+        font-size: 3rem;
+    }
+}
+.section {
+    border-bottom: 1px solid #cccccc;
+    font-size: 4rem;
+}
+.fan-state {
+    font-size: 3rem;
+}
+
+.temp-target {
+    @extend .temp-half;
+}
+.temp-diff {
+    @extend .temp-half;
+}
+.temp-target-input {
+    width: 100px;
+}
+.text-cell-description {
+    font-size: 1.7rem;
+    padding-bottom: 10px;
+    vertical-align:bottom;
+    text-align:left;
 }

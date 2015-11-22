@@ -13,7 +13,7 @@ var ajax = {
     get: function(url, data, overrides){
         var options = {
             url: url,
-            data: data,
+            data: data, 
             type: 'GET',
             dataType: 'json'
         }

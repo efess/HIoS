@@ -11,7 +11,7 @@ var config = {
                 if (err) {
                     console.log('Coudln\'t load local config file: '  + err);
                     reject(err);
-                } else{
+                } else {
                     var cfgObj = JSON.parse(data);
                     extend(config, cfgObj);  
                     

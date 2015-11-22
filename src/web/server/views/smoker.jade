@@ -1,0 +1,50 @@
+extends layout
+
+block content
+    
+    select(id='granularity')
+        option(value='10') 10 seconds
+        option(value='60') 1 Minute
+        option(value='300', selected='selected') 5 Minutes
+        option(value='900') 15 Minutes
+        option(value='3600') 1 hour
+    .row 
+        h2.section Smoker
+        .fan-state Fan: 
+            span.fan-state-value ---
+        .col-lg-6
+            .graph(class='hidden-md-down')
+                canvas(id='grillHistory', width='500', height='300')
+                
+        .col-lg-6
+            table.grill-temp-block
+                tr
+                    td.temp-now(rowspan='2')
+                        span.temp-now-value ---
+                    td.temp-target
+                        span.temp-target-value ---
+                        input.temp-target-input(class='hidden')
+                    td.text-cell-description target
+                tr 
+                    td.temp-diff
+                        span.temp-diff-value ---
+                    td.text-cell-description diff
+
+    .row
+        h2.section  Meat
+        .col-lg-6
+            .graph(class='hidden-md-down')
+                canvas(id='meatHistory', width='500', height='300')
+        .col-lg-6
+            table.meat-temp-block
+                tr
+                    td.temp-now(rowspan='2') 
+                        span.temp-now-value ---
+                    td.temp-target
+                        span.temp-target-value ---
+                        input.temp-target-input(class='hidden')
+                    td.text-cell-description target
+                tr 
+                    td.temp-diff
+                        span.temp-diff-value ---
+                    td.text-cell-description diff

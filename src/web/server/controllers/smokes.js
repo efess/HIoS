@@ -3,50 +3,100 @@ var express = require('express'),
     smokes = require('../model/smokes'),
     router = express.Router(),
     uuid = require('node-uuid');
-
-function padLeft(totalLength, padChar, str){
-    var realStr = str + "";
-    return Array(totalLength + 1 - realStr.length).join(padChar) + realStr;
-}
-
-function pausecomp(millis)
- {
-  var date = new Date();
-  var curDate = null;
-  do { curDate = new Date(); }
-  while(curDate-date < millis);
-}
-
-router.get('/test', function(req, res) {
-    res.send('hello world');
+    
+router.get('/', function(req, res) {
+    res.render('smoker', { 
+        title: 'Home HIoS - Smoker Stoker'});
 });
 
-router.post('/event', function(req, res) {
-    pausecomp(100);
-    console.log(req.body);
+router.post('/changeTargets', function(req,res) {
+    var meatTarget = parseInt(req.body.meatTarget) || 0;
+    if(meatTarget < 50 || meatTarget > 1000) {
+        meatTarget = 0;
+    }
+    var grillTarget = parseInt(req.body.grillTarget) || 0;
+    if(grillTarget < 50 || grillTarget > 1000) {
+        grillTarget = 0;
+    }
+    var tokens = [
+        grillTarget,
+        meatTarget,
+        req.body.deviceId
+    ];
     
-    var returnBody = "smokes_update:" + 
-        "grill:" + padLeft(5, " ", 95) + 
-        "meat:" + padLeft(5, " ", 185) +
-        "END";
-    var deviceId = uuid.unparse(new Buffer(req.body.id));
+    smokes.setTargets(tokens)
+        .then(function _success(){
+            res.send("SUCCESS");
+        }, function _fail(err) {
+            res.send('Error: ' + err);
+        });
+});    
+
+router.post('/updateSession', function(req, res) {
+    var tokens = [
+        req.body.end ? new Date() : 0,
+        req.body.meat || '',
+        "Char-Griller AKORN", //req.body.smokerType || '',
+        req.body.description || '',
+        req.body.deviceId
+    ];
+    
+    smokes.saveSession(tokens)
+        .then(function _success(){
+            res.send("SUCCESS");
+        }, function _fail(err) {
+            res.send('Error: ' + err);
+        });
+});
+
+router.post('/newSession', function(req, res) {
+    var tokens = [
+        req.body.deviceId,
+        new Date(),
+        0,
+        req.body.meat || '',
+        "Char-Griller AKORN", //req.body.smokerType || '',
+        req.body.description || ''
+    ];
+    
+    smokes.createSession(tokens)
+        .then(function _success(){
+            res.send("SUCCESS");
+        }, function _fail(err) {
+            res.send('Error: ' + err);
+        });
+});
+
+router.get('/status', function(req, res) {
+    var deviceId = req.query.deviceId;
+    var fromTime = 0;
+    var toTime = 9443881643;
     
     var tokens = [
         deviceId,
-        new Date().getTime() / 1000, // seconds since epoch...
-        isNaN(req.body.temp1) ? null : req.body.temp1,
-        isNaN(req.body.temp2) ? null : req.body.temp2,
-        0,
-        0,
-        req.body.fanstate
+        fromTime, // seconds since epoch...
+        toTime,
+        req.query.gran || 3600,
+        req.query.limit || 100,
     ];
+    var response = {
+        history: [],
+        current: {},
+        targets: {},
+        session: {}
+    };
     
-    smokes.addEvent(tokens)
-        .then(function(){
-            res.send(returnBody);
-        }, function(){
-            res.send('ERROR');
-        });
+    Promise.all([
+        smokes.getEvents(tokens).then(function(data){ response.history = data; }),
+        smokes.getEvent(deviceId).then(function(data){ response.current = data; }),
+        smokes.getTargets(deviceId).then(function(data){ response.targets = data; }),
+        smokes.getExistingSession(deviceId).then(function(data){ response.session = data; })
+    ]).then(function _success(){
+        res.send(JSON.stringify(response));
+    }, function _fail(err) {
+        res.send('Error: ' + err);
+    });
+    
 });
 
 module.exports = router

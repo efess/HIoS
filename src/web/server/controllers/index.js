@@ -4,14 +4,13 @@ var express = require('express'),
   
 /* GET home page. */
 router.get('/', function(req, res) {
-    res.render('index', { title: 'rendered with jade' });
+    res.render('index', { title: 'HIoS homepage' });
 });
 
 router.get('/eventstest', function(req, res) {
     var deviceId = req.query.deviceId;
     var fromTime = 0;
     var toTime = 9443881643;
-    
     
     var tokens = [
         deviceId,
@@ -29,7 +28,8 @@ router.get('/eventstest', function(req, res) {
         });
 });
 
-router.use('/device/smokes', require('./smokes'));
+router.use('/device/smokes', require('./device/smokes'));
+router.use('/smokes', require('./smokes'));
 router.use('/admin', require('./admin'));
 
 module.exports = router

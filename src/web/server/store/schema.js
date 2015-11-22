@@ -38,10 +38,9 @@ function setLatestVersion(){
 
 function getUpgradeSqls(currentVersion){
     var upgradeSqls = [];
-    return [];
     // Version 0 - initial prototype
     if(currentVersion <= 0){
-        upgradeSqls.push('CREATE TABLE IF NOT EXISTS devices(' +
+        upgradeSqls.push('CREATE TABLE IF NOT EXISTS device (' +
             'tableId INTEGER AUTO_INCREMENT PRIMARY KEY,' + 
             'id VARCHAR(50) NOT NULL UNIQUE,' +
             'type VARCHAR(50),'+
@@ -49,23 +48,29 @@ function getUpgradeSqls(currentVersion){
             'lastConnect DATETIME' +
             ');');
             
-        upgradeSqls.push('CREATE TABLE IF NOT EXISTS smokes(' +
+        upgradeSqls.push('CREATE TABLE IF NOT EXISTS smokes (' +
             'tableId INTEGER AUTO_INCREMENT PRIMARY KEY,' + 
             'deviceId VARCHAR(50) NOT NULL UNIQUE,' +
-            'temp1Desc VARCHAR(50),' +
-            'temp2Desc VARCHAR(50),' +
-            'temp3Desc VARCHAR(50),' +
-            'temp4Desc VARCHAR(50)' +
+            'grillTarget float,' +
+            'meatTarget float' +
+            ');');
+            
+        upgradeSqls.push('CREATE TABLE IF NOT EXISTS smokes_session (' +
+            'tableId INTEGER AUTO_INCREMENT PRIMARY KEY,' + 
+            'deviceId VARCHAR(50),' +
+            'start INTEGER,' +
+            'end INTEGER,' +
+            'meat VARCHAR(20),' +
+            'smokerType VARCHAR(20),' +
+            'description TEXT' +
             ');');
             
         upgradeSqls.push('CREATE TABLE IF NOT EXISTS smokes_events (' +
             'tableId INTEGER AUTO_INCREMENT PRIMARY KEY,' + 
             'deviceId VARCHAR(50),' +
             'timestamp INTEGER,' +
-            'temp1 FLOAT,' +
-            'temp2 FLOAT,' +
-            'temp3 FLOAT,' +
-            'temp4 FLOAT,' +
+            'grillTemp FLOAT,' +
+            'meatTemp FLOAT,' +
             'fanstate VARCHAR(20)' +
             ');');
             
@@ -90,7 +95,8 @@ function performUpgrade(upgradeSqls) {
     if(upgradeSqls.length){
         return db.execTransaction(R.map(function(sql){
                 return db.createStoredQuery(sql, []);
-            }, upgradeSqls));
+            }, upgradeSqls))
+            .then(setLatestVersion);
     } else {
         return Promise.resolve();
     }
