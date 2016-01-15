@@ -10,6 +10,10 @@ local_config.json
 *.sdf
 .vs/
 .vscode/
+.settings/
+.launches/
+.metadata/
+firmware/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/

@@ -1,0 +1,1 @@
+call node src/web/server/main.js

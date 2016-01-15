@@ -21,7 +21,9 @@
   "dependencies": {
     "bootstrap-sass": "bootstrap-sass-official#~3.3.5",
     "Chart.js": "chartjs#~1.0.2",
-    "jquery": "~2.1.4"
+    "jquery": "~2.1.4",
+    "spectrum": "~1.8.0",
+    "polymer": "Polymer/polymer#1.2.0"
   },
   "resolutions": {
     "bootstrap": "v4.0.0-alpha"

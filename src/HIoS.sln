@@ -17,6 +17,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "environment_1", "esp8266\en
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_esp", "arduino\test_esp\test_esp.vcxproj", "{48F828AB-0B10-484C-8E6A-FFD50E94A268}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "undercabinet", "arduino\undercabinet\undercabinet.vcxproj", "{DFCDAC7A-9C34-448D-99FC-609061EA458C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test_lights", "test_lights\test_lights.csproj", "{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -89,6 +93,30 @@ Global
 		{48F828AB-0B10-484C-8E6A-FFD50E94A268}.Release|Win32.ActiveCfg = Release|Win32
 		{48F828AB-0B10-484C-8E6A-FFD50E94A268}.Release|Win32.Build.0 = Release|Win32
 		{48F828AB-0B10-484C-8E6A-FFD50E94A268}.Release|x64.ActiveCfg = Release|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Debug|Win32.Build.0 = Debug|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Debug|x64.ActiveCfg = Debug|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Release|Any CPU.ActiveCfg = Release|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Release|Win32.ActiveCfg = Release|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Release|Win32.Build.0 = Release|Win32
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C}.Release|x64.ActiveCfg = Release|Win32
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Release|Win32.ActiveCfg = Release|Any CPU
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -96,8 +124,13 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{86C84AFA-10FC-4316-8061-95F87A8BA492} = {6EFF21E5-955B-4B48-BEE8-FE6FEC22002F}
 		{83697530-C636-4BA6-A585-51C9B232A5AD} = {6EFF21E5-955B-4B48-BEE8-FE6FEC22002F}
+		{6511DBBE-1599-4912-BA5A-51ABF1A06DC8} = {6EFF21E5-955B-4B48-BEE8-FE6FEC22002F}
 		{4E203DA6-DDA9-404D-8EF1-E03C931DC1EB} = {A0058D64-A4FF-4665-BFF4-4A9A71E742B0}
 		{48F828AB-0B10-484C-8E6A-FFD50E94A268} = {A0058D64-A4FF-4665-BFF4-4A9A71E742B0}
+		{DFCDAC7A-9C34-448D-99FC-609061EA458C} = {A0058D64-A4FF-4665-BFF4-4A9A71E742B0}
 		{8C3E19D0-1314-4716-A521-684D556FF284} = {0FA24275-FA8D-4071-9A58-5CDD2A6BBAC2}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

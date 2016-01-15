@@ -1,0 +1,83 @@
+extends layout
+
+block content
+    h4 Kitchen Undercabinet Lights
+    .status-message(class="info hidden")
+    .device-settings(class="row")
+        .color-setting(class="col-md-4")
+            span(class="sub-title") Base Color
+            .color-part(id='color-red')
+                input(type='range' min='0' max='255' step='1' name='r' value='0')
+                .color-part-value-disp
+            .color-part(id='color-green')
+                input(type='range' min='0' max='255' step='1' name='g' value='0')
+                .color-part-value-disp
+            .color-part(id='color-blue')
+                input(type='range' min='0' max='255' step='1' name='b' value='0')
+                .color-part-value-disp
+            .color-preview
+            .color-value
+        .occupied(class='options-sub col-md-4')
+            span(class="sub-title") When Occupied
+            .controls
+                .brightness
+                    span Brightness
+                        input(type='range' min='0' max='15' step='1' name='oBright' value='0')
+                .animation
+                    span Animation
+                        select(class='animation-list' value='0')
+                .transition
+                    span Transition
+                        select(class='transition-list' value='0')
+                
+        .unoccupied(class='options-sub col-md-4')
+            span(class="sub-title") When UnOccupied
+            .controls
+                .brightness
+                    span Brightness
+                        input(type='range' min='0' max='15' step='1' name='oBright' value='0')
+                .animation
+                    span Animation
+                        select(class='animation-list' value='0')
+                .transition
+                    span Transition
+                        select(class='transition-list' value='0')
+    .divider
+    .device-settings(class='row')
+        .pallete-setting(class='col-md-12')
+            span(class="sub-title") Pallete
+            .controls
+                input(type='color' class='p0 color-value')
+                input(type='color' class='p1 color-value')
+                input(type='color' class='p2 color-value')
+                input(type='color' class='p3 color-value')
+                input(type='color' class='p4 color-value')
+                input(type='color' class='p5 color-value')
+                input(type='color' class='p6 color-value')
+                input(type='color' class='p7 color-value')
+                input(type='color' class='p8 color-value')
+                input(type='color' class='p9 color-value')
+                input(type='color' class='p10 color-value')
+                input(type='color' class='p11 color-value')
+                input(type='color' class='p12 color-value')
+                input(type='color' class='p13 color-value')
+                input(type='color' class='p14 color-value')
+                input(type='color' class='p15 color-value')
+            select.pallete-preset
+                
+    button.send-color Send to device!
+    .divider
+    .animation-testing
+        div --Animation testing--
+        span Preview:
+        p
+        .led-simulation
+        p
+        br
+        .select-animation
+            select.animation-list
+        p
+        .button-animate
+            button.do-animate Animate!
+        select.pallete-preset
+            

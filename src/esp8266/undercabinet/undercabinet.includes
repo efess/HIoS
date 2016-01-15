@@ -1,0 +1,9 @@
+include
+include/driver
+modules/include
+mqtt/include
+C:/Espressif/ESP8266_SDK_140/include
+C:/Espressif/extra/include
+user
+.
+driver

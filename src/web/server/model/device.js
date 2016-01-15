@@ -13,4 +13,5 @@ var device = {
         return db.query("UPDATE device SET lastConnect = ? WHERE id = ?", tokens);
     }
 };
+
 module.exports = device;

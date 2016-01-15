@@ -30,7 +30,7 @@ router.post('/changeTargets', function(req,res) {
         }, function _fail(err) {
             res.send('Error: ' + err);
         });
-});    
+});
 
 router.post('/updateSession', function(req, res) {
     var tokens = [

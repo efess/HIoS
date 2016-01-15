@@ -1,21 +1,24 @@
 doctype html
 html
   head
+    link(href='css/spectrum.css' rel='stylesheet')
     link(href='css/style.css' rel='stylesheet')
     script(src='js/app.js' type='text/javascript')
     block title
       title #{title}
   body
     .row
-        .header.col-md-12 top stuff
+        .header.col-md-12 Projects
     .row
-        .nav.col-md-2 sdfasdf
+        .nav.col-md-2
             ul(class=['nav','nav-pills','nav-stacked'])
                 li.nav-item 
-                    a.nav-link(href='#') Smoker Stoker
+                    a.nav-link(href='/') Home
                 li.nav-item 
-                    a.nav-link(href='#') Home
-        .container.col-md-10 stuff
+                    a.nav-link(href='/undercabinet') Under-cabinet Lights
+                li.nav-item 
+                    a.nav-link(href='/smokes') Smoker Stoker
+        .container.col-md-10
             block content
         
     

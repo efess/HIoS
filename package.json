@@ -24,13 +24,15 @@
   },
   "dependencies": {
     "browserify": "^11.2.0",
+    "mqtt": "^1.6.0",
     "node-uuid": "^1.4.7",
     "redis": "^1.0.0",
+    "spectrum-colorpicker": "^1.8.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
   },
   "browser": {
-    "jquery": "./src/web/components/jquery/dist/jquery.js",
-    "chart": "./src/web/components/Chart.js/Chart.js"
+    "chart": "./src/web/components/Chart.js/Chart.js",
+    "spectrum":  "./src/web/components/spectrum/spectrum.js"
   }
 }

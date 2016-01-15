@@ -210,13 +210,14 @@ $(document).ready(function(){
     //     location.reload(true);
     // }, 2000)
     // smokes.getStatus();
-    
-    (function refresh(){
-        smokes.getStatus();
-        setTimeout(function(){
-            refresh();
-        }, 1000)
-    }());
+  
+    // for running:  
+    // (function refresh(){
+    //     smokes.getStatus();
+    //     setTimeout(function(){
+    //         refresh();
+    //     }, 1000)
+    // }());
     
 });
 
