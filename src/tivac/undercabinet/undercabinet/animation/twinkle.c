@@ -21,7 +21,7 @@ void twinkle_frame(void *g_state, Pixels* pixels)
 //        // can't do brighter than max....
 //        return;
 //    }
-	uint8_t normalColor = 0x03;
+	uint8_t normalColor = 0x30;
     uint8_t colorDiff = 0xFF - normalColor;
 
     uint16_t newIdx = 0, i;

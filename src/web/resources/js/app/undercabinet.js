@@ -1,8 +1,10 @@
-
+var R = require('ramda');
 var Promise = require('promise');
 var $ = require('jquery');
 var ajax = require('./ajax');
+var Chart = require('chart');
 var spectrum = require('spectrum');
+var fft = require('./helper/fft');
 
 var presets = {
     party: [
@@ -52,6 +54,7 @@ var currentPallete = presets.party;
 var changedPallete= false;
 var led_array = [];
 var led_count = 100;
+var LED_COUNT = led_count;
 var animationStates = [];
 var PartyColors_p = [
     0x5500AB, 0x84007C, 0xB5004B, 0xE5001B,
@@ -59,7 +62,13 @@ var PartyColors_p = [
     0xAB5500, 0xDD2200, 0xF2000E, 0xC2003E,
     0x8F0071, 0x5F00A1, 0x2F00D0, 0x0007F9
 ];
+var HeatColors_p = [
 
+    0x000000,
+    0x330000, 0x660000, 0x990000, 0xCC0000, 0xFF0000,
+    0xFF3300, 0xFF6600, 0xFF9900, 0xFFCC00, 0xFFFF00,
+    0xFFFF33, 0xFFFF66, 0xFFFF99, 0xFFFFCC, 0xFFFFFF
+];
 function red(color) { return color >> 16;}
 function green(color) { return (color >> 8) & 0xFF;}
 function blue(color) { return color & 0xFF;}
@@ -114,8 +123,124 @@ function changeBrightness(color, newBrightness) {
         b: Math.round((color.b * newBrightness) / maxValue),
     }
 }
+var doSoundTest = (function() {
+    var isSetup = false;
+    var node = null;
+    var audioContext = null;
+    var lastBuffer = [];
+    var getSample = true;
+    var chart = null;
+    var fqChart = null;
+    var fftData = [];
+    var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    var gainNode = audioContext.createGain();
+    gainNode.gain.value = 5;
+    
+    function setGraph() {
+        var chartOptions = {
+            // Boolean - Whether to animate the chart
+            animation: false,
+            legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>",
+            responsive: true,
+            maintainAspectRatio: true,
+            pointDot: false,
+            scaleLabel: " <%=value%>",
+            scaleShowVerticalLines: false,
+            scaleBeginAtZero: false
+        };
+        var chartDataset = {
+            labels: new Array(1024),
+            label: "Meat",
+            fillColor: "rgba(178,141,91,0.2)",
+            pointColor: "rgba(178,141,91,1)",
+            pointStrokeColor: "#fff",
+            pointHighlightFill: "#fff",
+            pointHighlightStroke: "rgba(178,141,91,1)",
+            data: lastBuffer
+        };
+        var chartData = {
+            datasets: [chartDataset],
+            labels: new Array(1024)
+        };
+        if(!chart) {
+            var ctx = document.getElementById('sound-data-graph').getContext("2d");
+            var chart = new Chart(ctx).Line(chartData, chartOptions);
+        } else {
+            chart.initialize(chartData);
+        }
+        
+        // bar chart
+        chartOptions = {
+            animation: false
+        };
+        chartData = {
+            datasets: [{ 
+                label: "My First dataset",
+                fillColor: "rgba(220,220,220,0.5)",
+                strokeColor: "rgba(220,220,220,0.8)",
+                highlightFill: "rgba(220,220,220,0.75)",
+                highlightStroke: "rgba(220,220,220,1)",
+                data: fftData
+            }],
+            labels: R.map(function(){return '';}, new Array(1024))
+        };
+        if(!fqChart) {
+            var ctx = document.getElementById('freq-data-graph').getContext("2d");
+            var fqChart = new Chart(ctx).Bar(chartData, chartOptions);
+        } else {
+            fqChart.initialize(chartData);
+        }
+    }
+    
+    function setup() {
+        if(isSetup){
+            return;
+        }
+        isSetup = true;
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+        navigator.getUserMedia(
+            { audio: true }, 
+            function(stream) {
+                var source = audioContext.createMediaStreamSource(stream);
+                node = audioContext.createScriptProcessor(1024, 1, 1);
+                node.onaudioprocess = (e) => {
+                    if (!getSample) { return; }
+                    
+                    var thisBuffer = e.inputBuffer.getChannelData(0);
+                    
+                    //normalize to 8 bit
+                    for(var i = 0; i < 1024; i++) { 
+                        lastBuffer[i] = Math.floor((thisBuffer[i] + 1) * 128);
+                    }
+                    
+                    getSample = false
+                };
+                
+                // source -> gain -> output buffer
+                
+                source.connect(gainNode);
+                gainNode.connect(node);
+                node.connect(audioContext.destination); 
+                
+            }, 
+            function(){/*lol*/}
+        );
+    }
+    
+    return function() {
+        setup();
+        getSample = true;
+        setTimeout(function() {
+            fftData = fft.doFft(lastBuffer, 1024);
+            setGraph();
+        }, 100);
+        
+    }
+}());
+
 var undercabinet = {
     hookupEvents: function(){
+        
         $('input', $('#color-red')).on('change', undercabinet.changeColor);
         $('input', $('#color-green')).on('change', undercabinet.changeColor);
         $('input', $('#color-blue')).on('change', undercabinet.changeColor);
@@ -126,7 +251,7 @@ var undercabinet = {
         for(var i = 0; i < led_count; i++) {
             var newPixel = document.createElement('div');
             newPixel.className = 'pixel';
-            newPixel.id = "pix-" + i;
+            newPixel.id = "pix-" + i; 
             simulation.append(newPixel);
         }
         var presetLists = $('.pallete-preset');
@@ -134,6 +259,7 @@ var undercabinet = {
             presetLists.append('<option value="'+ key + '">'+ key + '</option>');
         }
         var selectList = $('.animation-list');
+        selectList.append('<option value="6">Fire</option>');
         selectList.append('<option value="0">None</option>');
         selectList.append('<option value="1">Smooth Color motion</option>');
         selectList.append('<option value="2">Twinkle</option>');
@@ -169,6 +295,9 @@ var undercabinet = {
                 $('.p' + i, $('.pallete-setting')).spectrum("set",
                  'rgb(' + red(presets[presetVal][i]) + ',' + green(presets[presetVal][i]) + ',' + blue(presets[presetVal][i]) + ')');
             }
+        });
+        $('.get-sound').on('click', function(){
+           doSoundTest(); 
         });
     }, 
     changeColor: function(){
@@ -269,9 +398,10 @@ var undercabinet = {
     animate: function() {
         var animap = { 
             1: undercabinet.animations.floatingGradients,
-            2: undercabinet.animations.twinkle
+            2: undercabinet.animations.twinkle,
             //1: undercabinet.animations.,
             //1: undercabinet.animations.floatingGradients,
+            6: undercabinet.animations.fire
         };
         var animationSelection = parseInt($('.animation-list', $('.animation-testing')).val());
             animationStates.forEach(function(states) {
@@ -310,6 +440,79 @@ var undercabinet = {
         doFrame();
     },
     animations: {
+        fire: function(state) {
+            var FIRE_DIFFUSE = 10;
+
+            if(!state.setup){
+                state.setup = true;
+                state.fire = [];
+                state.frameNum = 0;
+
+                for(var i = 0; i < LED_COUNT; i++){
+                    state.fire[i] = {
+                        fireIdx: 0,
+                        isFlareUp: 0
+                    }
+                }
+            }
+
+            state.frameNum++;
+            if(state.frameNum % 5 !== 0) {
+                return state;
+            }
+
+            // change add new flare up            
+            if(random(0, 10) === 0){
+                // max new per frame 5%
+                var newFlareUp = 1;
+            }
+
+
+            // Find new twinkles
+            for(var i = 0; i < newFlareUp; i++) {
+                var randomPixel = random(0, LED_COUNT);
+                if(!state.fire[randomPixel].isFlareUp){
+                    state.fire[randomPixel].isFlareUp = 1;
+                    state.fire[randomPixel].fireIdx = 15;
+                }
+            }
+            
+            for(var i = 0; i < LED_COUNT; i++) {
+                if(!state.fire[i].isFlareUp) {
+                    state.fire[i].fireIdx = random(4, 8);
+                }
+            }
+            
+            for(var i = 0; i < LED_COUNT; i++) {
+                if(state.fire[i].isFlareUp) {
+                    var thisFireNode = state.fire[i];
+                    if(random(0, 1000) % 2 == 0) {
+                        thisFireNode.fireIdx += 1;
+                        
+                    } else {
+                        thisFireNode.fireIdx -= 2;
+                        
+                    }
+                    var flareUpIdx = thisFireNode.fireIdx;
+                    
+                    if(thisFireNode.fireIdx <= 8) {
+                        thisFireNode.isFlareUp = 0;
+                    } else {
+                        for(var j = -FIRE_DIFFUSE + 1; j < FIRE_DIFFUSE; j++) {
+                            var k = (i + j + LED_COUNT) % LED_COUNT;
+                            // Use GetPixel/SetPixel on arduino
+                            state.fire[k].fireIdx = Math.max(state.fire[k].fireIdx, flareUpIdx - Math.abs(j));
+                        }
+                    }
+                }
+            }
+
+            for(var i = 0; i < LED_COUNT; i++) {
+                var thisEntry = HeatColors_p[Math.min(state.fire[i].fireIdx, 15)];
+                $('#pix-' + i).css('background-color', 'rgb(' + red(thisEntry) + ',' + green(thisEntry) + ',' + blue(thisEntry) + ')');
+            }
+            return state;
+        },
         pixelate: function(state) {
             var frameCount = 20;
             

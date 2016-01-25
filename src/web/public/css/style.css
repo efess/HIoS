@@ -4643,3 +4643,6 @@ body {
 
 .picker-val {
   border: 0; }
+
+#freq-data-graph {
+  width: 1162px; }

@@ -22,6 +22,7 @@
 #include "settings.h"
 #include "motion.h"
 #include "update.h"
+#include "sound.h"
 
 #ifdef DEBUG
 void
@@ -93,13 +94,14 @@ void check_change_state()
 	}
 }
 
-int main(void) {
-
+int main(void)
+{
 	// clock setup, run @80MHz, use 16MHz xtal
 	MAP_SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
 	configure_uart0();
 	motion_init();
+	sound_init();
 
 	ws2812_init(LED_COUNT);
 

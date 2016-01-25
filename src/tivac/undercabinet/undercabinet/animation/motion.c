@@ -52,7 +52,7 @@ void motion_setup(void *g_state, RoomStateSettings* settings)
 
 void motion_frame(void *g_state, Pixels* pixels)
 {
-
+	uint8_t diffuseNodeWidth = fminf(NODE_DIFFUSE_WIDTH, pixels->pixelCount);
 	MotionState *state = g_state;
 	uint16_t i;
 	for(i = 0; i < RANDOM_NODE_SIZE; i++)
@@ -70,7 +70,7 @@ void motion_frame(void *g_state, Pixels* pixels)
 	{
 		pos = (uint16_t)state->nodeStart[i] + (uint16_t)stretch;
 
-		for(j = -NODE_DIFFUSE_WIDTH + 1; j < NODE_DIFFUSE_WIDTH; j++) {
+		for(j = -diffuseNodeWidth + 1; j < diffuseNodeWidth; j++) {
 			k = (j + pos + pixels->pixelCount) % pixels->pixelCount;
 
 			nextColor = blendA(pixels_getPixelColor(pixels, k), state->nodeColor[i], ((float)abs(j) / (float)NODE_DIFFUSE_WIDTH) * 255);
