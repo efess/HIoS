@@ -137,19 +137,33 @@ var doSoundTest = (function() {
     gainNode.gain.value = 5;
     
     function setGraph() {
+        
         var chartOptions = {
             // Boolean - Whether to animate the chart
             animation: false,
             legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>",
-            responsive: true,
-            maintainAspectRatio: true,
+            responsive: false,
+            maintainAspectRatio: false,
             pointDot: false,
-            scaleLabel: " <%=value%>",
+            scaleLabel: " ",
             scaleShowVerticalLines: false,
-            scaleBeginAtZero: false
+            scaleBeginAtZero: true,
+            
+
+            // Boolean - Determines whether to draw tooltips on the canvas or not
+            showTooltips: false,
+            // Boolean - If we want to override with a hard coded scale
+            scaleOverride: true,
+
+            // ** Required if scaleOverride is true **
+            // Number - The number of steps in a hard coded scale
+            scaleSteps: 32,
+            // Number - The value jump in the hard coded scale
+            scaleStepWidth: 8,
+            // Number - The scale 
+            scaleStartValue: 0
         };
         var chartDataset = {
-            labels: new Array(1024),
             label: "Meat",
             fillColor: "rgba(178,141,91,0.2)",
             pointColor: "rgba(178,141,91,1)",
@@ -160,19 +174,44 @@ var doSoundTest = (function() {
         };
         var chartData = {
             datasets: [chartDataset],
-            labels: new Array(1024)
+            labels: R.map(function(){return '';}, new Array(1024))
         };
         if(!chart) {
             var ctx = document.getElementById('sound-data-graph').getContext("2d");
             var chart = new Chart(ctx).Line(chartData, chartOptions);
         } else {
             chart.initialize(chartData);
-        }
+        } 
         
         // bar chart
         chartOptions = {
-            animation: false
-        };
+            animation: false,
+            //Number - Pixel width of the bar stroke
+            barStrokeWidth : 1,
+
+            //Number - Spacing between each of the X value sets
+            barValueSpacing : 1,
+
+            //Number - Spacing between data sets within X values
+            barDatasetSpacing : 1,
+            
+            // Boolean - whether to maintain the starting aspect ratio or not when responsive, if set to false, will take up entire container
+            maintainAspectRatio: true,
+            responsive: false,
+            // Boolean - Determines whether to draw tooltips on the canvas or not
+            showTooltips: false,
+            // Boolean - If we want to override with a hard coded scale
+            scaleOverride: true,
+
+            // ** Required if scaleOverride is true **
+            // Number - The number of steps in a hard coded scale
+            scaleSteps: 5,
+            // Number - The value jump in the hard coded scale
+            scaleStepWidth: 1000,
+            // Number - The scale 
+            scaleStartValue: 0
+        }; 
+        var data = fftData.splice(0, 512);
         chartData = {
             datasets: [{ 
                 label: "My First dataset",
@@ -180,9 +219,9 @@ var doSoundTest = (function() {
                 strokeColor: "rgba(220,220,220,0.8)",
                 highlightFill: "rgba(220,220,220,0.75)",
                 highlightStroke: "rgba(220,220,220,1)",
-                data: fftData
+                data: data
             }],
-            labels: R.map(function(){return '';}, new Array(1024))
+            labels: R.map(function(){return '';}, data)
         };
         if(!fqChart) {
             var ctx = document.getElementById('freq-data-graph').getContext("2d");
@@ -214,10 +253,10 @@ var doSoundTest = (function() {
                     }
                     
                     getSample = false
-                };
+                }; 
                 
                 // source -> gain -> output buffer
-                
+                 
                 source.connect(gainNode);
                 gainNode.connect(node);
                 node.connect(audioContext.destination); 
@@ -225,22 +264,49 @@ var doSoundTest = (function() {
             }, 
             function(){/*lol*/}
         );
+    } 
+    function newObj() {
+        return {re:0, im:0};
     }
-    
-    return function() {
-        setup();
-        getSample = true;
-        setTimeout(function() {
-            fftData = fft.doFft(lastBuffer, 1024);
-            setGraph();
-        }, 100);
+    function makeRec(len) {
+        var arr = [];
+        for(var i = 0; i < len; i++) {
+            arr[i] = {re: 0, im: 0};
+        }
+        return arr;
+    };
+  
+    return function() { 
+        //
+        var test = [1,1,1,1,0,0,0,0];
         
-    }
+        var result = test.slice();
+        
+        fft.cfft(result);
+        
+        return;
+        //
+        setup(); 
+        getSample = true;
+        setTimeout(function() { 
+            var fftResult = lastBuffer.slice();
+            //fftResult = fft.realFft(lastBuffer, 0, 1024, 1, makeRec(1024));
+            fft.cfft(fftResult);
+            fftData = R.map(
+                function(fact){  
+                    return Math.sqrt(Math.pow(fact.re, 2) + Math.pow(fact.im, 2));
+                }, 
+                fftResult); 
+            
+            setGraph();
+            doSoundTest(); 
+        }, 120);  
+    } 
 }());
 
 var undercabinet = {
     hookupEvents: function(){
-        
+      
         $('input', $('#color-red')).on('change', undercabinet.changeColor);
         $('input', $('#color-green')).on('change', undercabinet.changeColor);
         $('input', $('#color-blue')).on('change', undercabinet.changeColor);
@@ -252,7 +318,7 @@ var undercabinet = {
             var newPixel = document.createElement('div');
             newPixel.className = 'pixel';
             newPixel.id = "pix-" + i; 
-            simulation.append(newPixel);
+            simulation.append(newPixel); 
         }
         var presetLists = $('.pallete-preset');
         for(var key in presets) {

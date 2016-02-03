@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
@@ -14,6 +15,7 @@
 #include "driverlib/ssi.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/uart.h"
+#include "driverlib/fpu.h"
 #include "utils/uartstdio.h"
 #include "driver/ws2812.h"
 #include "animation.h"
@@ -23,6 +25,8 @@
 #include "motion.h"
 #include "update.h"
 #include "sound.h"
+#include "util/dsp.h"
+#include "complex.h"
 
 #ifdef DEBUG
 void
@@ -100,6 +104,10 @@ int main(void)
 	MAP_SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
 	configure_uart0();
+	FPUEnable();
+	FPUFlushToZeroModeSet(FPU_FLUSH_TO_ZERO_EN);
+	FPURoundingModeSet(FPU_ROUND_ZERO);
+
 	motion_init();
 	sound_init();
 
@@ -136,6 +144,8 @@ int main(void)
 
 	animation_changeState(_pixels, _settings, true);
 
+	float bins[16];
+
 	while (1) {
 		MAP_SysCtlDelay(delay);
 
@@ -144,6 +154,16 @@ int main(void)
 		animation_runFrame(_pixels);
 
 		ws2812_sendData(_pixels);
+
+		sound_getFreq(bins, 16);
+
+// Testing freq analyzer
+		char out[130];
+		sprintf(out, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n",
+				(int32_t)bins[0],(int32_t)bins[1],(int32_t)bins[2],(int32_t)bins[3],(int32_t)bins[4],(int32_t)bins[5],(int32_t)bins[6],(int32_t)bins[7],(int32_t)bins[8],(int32_t)bins[9],(int32_t)bins[10],
+				(int32_t)bins[11],(int32_t)bins[12],(int32_t)bins[13],(int32_t)bins[14],(int32_t)bins[15]);
+
+		UARTprintf(out);
 	}
 }
 
