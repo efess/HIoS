@@ -11,6 +11,7 @@
 #include <stdint.h>
 void sound_init();
 
+
 void sound_getFreq(float bins[], uint8_t binCount);
 
 #endif /* SOUND_H_ */

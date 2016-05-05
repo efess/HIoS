@@ -4,6 +4,7 @@
 #include "string.h"
 #include "math.h"
 #include "../util/rgbfunc.h"
+#include "../sound.h"
 
 int8_t getRandomNodeIdx(MotionState *state, uint8_t idx)
 {
@@ -68,6 +69,7 @@ void motion_frame(void *g_state, Pixels* pixels)
 
 	for(i = 0; i < PALLETE_SIZE; i++)
 	{
+
 		pos = (uint16_t)state->nodeStart[i] + (uint16_t)stretch;
 
 		for(j = -diffuseNodeWidth + 1; j < diffuseNodeWidth; j++) {
@@ -76,7 +78,6 @@ void motion_frame(void *g_state, Pixels* pixels)
 			nextColor = blendA(pixels_getPixelColor(pixels, k), state->nodeColor[i], ((float)abs(j) / (float)NODE_DIFFUSE_WIDTH) * 255);
 
 			pixels_setPixelColor(pixels, k, changeBrightness(nextColor, state->brightness));
-
 		}
 	}
 	state->frameNum ++;

@@ -9,6 +9,7 @@
 #include "animation/motion.h"
 #include "animation/discrete.h"
 #include "animation/fire.h"
+#include "animation/freqs.h"
 
 
 #define ANIMATION_NONE 0
@@ -18,6 +19,7 @@
 #define ANIMATION_RUNNER 4
 #define ANIMATION_DISCRETE 5
 #define ANIMATION_FIRE 6
+#define ANIMATION_FREQS 7
 
 #define TRANSITION_FADE 1
 #define TRANSITION_PIXELATE 2
@@ -157,6 +159,10 @@ void animation_changeState(Pixels *pixels, Settings *settings, bool isOccupied)
 	case ANIMATION_FIRE:
 		aFrame = fire_frame;
 		aSetup = fire_setup;
+		break;
+	case ANIMATION_FREQS:
+		aFrame = freqs_frame;
+		aSetup = freqs_setup;
 		break;
 	default:
 		aFrame = 0;

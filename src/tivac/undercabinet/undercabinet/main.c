@@ -25,8 +25,6 @@
 #include "motion.h"
 #include "update.h"
 #include "sound.h"
-#include "util/dsp.h"
-#include "complex.h"
 
 #ifdef DEBUG
 void
@@ -121,7 +119,7 @@ int main(void)
 	_settings = (Settings*)malloc(sizeof(Settings));
 
 	_settings->occupied.color = 0x0000FF;
-	_settings->occupied.animation = 1;
+	_settings->occupied.animation = 7;
 	_settings->occupied.brightness = 5;
 	_settings->occupied.transition = 1;
 	memcpy(_settings->occupied.colorPallete, testPallete, sizeof(testPallete));
@@ -144,8 +142,6 @@ int main(void)
 
 	animation_changeState(_pixels, _settings, true);
 
-	float bins[16];
-
 	while (1) {
 		MAP_SysCtlDelay(delay);
 
@@ -154,16 +150,15 @@ int main(void)
 		animation_runFrame(_pixels);
 
 		ws2812_sendData(_pixels);
-
-		sound_getFreq(bins, 16);
+		//sound_getFreq(bins, 16);
 
 // Testing freq analyzer
-		char out[130];
-		sprintf(out, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n",
-				(int32_t)bins[0],(int32_t)bins[1],(int32_t)bins[2],(int32_t)bins[3],(int32_t)bins[4],(int32_t)bins[5],(int32_t)bins[6],(int32_t)bins[7],(int32_t)bins[8],(int32_t)bins[9],(int32_t)bins[10],
-				(int32_t)bins[11],(int32_t)bins[12],(int32_t)bins[13],(int32_t)bins[14],(int32_t)bins[15]);
-
-		UARTprintf(out);
+//		char out[130];
+//		sprintf(out, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n",
+//				(int32_t)bins[0],(int32_t)bins[1],(int32_t)bins[2],(int32_t)bins[3],(int32_t)bins[4],(int32_t)bins[5],(int32_t)bins[6],(int32_t)bins[7],(int32_t)bins[8],(int32_t)bins[9],(int32_t)bins[10],
+//				(int32_t)bins[11],(int32_t)bins[12],(int32_t)bins[13],(int32_t)bins[14],(int32_t)bins[15]);
+//
+//		UARTprintf(out);
 	}
 }
 

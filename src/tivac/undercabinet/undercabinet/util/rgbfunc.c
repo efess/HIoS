@@ -13,6 +13,13 @@ uint8_t max3(uint8_t a, uint8_t b, uint8_t c)
     (m < c) && (m = c);
     return m;
 }
+uint8_t min3(uint8_t a, uint8_t b, uint8_t c)
+{
+    uint8_t m = a;
+    (m > b) && (m = b);
+    (m > c) && (m = c);
+    return m;
+}
 
 uint8_t brightness(uint32_t color)
 {

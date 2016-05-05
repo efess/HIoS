@@ -8,7 +8,6 @@
 #include "math.h"
 #include "dsp.h"
 
-#define M_PI           3.14159265358979323846  /* pi */
 
 // Handwrote a fft algorithm that recursively returns sub arrays, but couldn't
 // had problems trying to implement an in-place version

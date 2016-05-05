@@ -32,10 +32,10 @@ uint8_t DMAcontroltable[1024];
 // 44.1k hz
 #define TICKS_44p1HZ CPU_CLOCK / 44100
 
-uint16_t _sndbufA[1024];
-uint16_t _sndbufB[1024];
+int16_t _sndbufA[SAMPLES];
+int16_t _sndbufB[SAMPLES];
 
-volatile uint16_t* _currentBuf = 0;
+volatile int16_t* _currentBuf = 0;
 
 // freq array from 0 - 512
 // for(int i = 5; i < 20; i++) { console.log(Math.pow(10, i*.135463498));}
@@ -81,7 +81,7 @@ void _adc_sequence_3_handler(void)
 				UDMA_MODE_PINGPONG,
 				(void *)(ADC0_BASE + ADC_O_SSFIFO3),
 				_sndbufA,
-				1024);
+				SAMPLES);
 		uDMAChannelEnable(UDMA_CHANNEL_ADC3);
 	} else if (altMode == UDMA_MODE_STOP) {
 		_currentBuf = _sndbufB;
@@ -92,7 +92,7 @@ void _adc_sequence_3_handler(void)
 				UDMA_MODE_PINGPONG,
 				(void *)(ADC0_BASE + ADC_O_SSFIFO3),
 				_sndbufB,
-				1024);
+				SAMPLES);
 		uDMAChannelEnable(UDMA_CHANNEL_ADC3);
 	}
 }
@@ -139,14 +139,14 @@ void _init_dma()
 			UDMA_MODE_PINGPONG,
 			(void *)(ADC0_BASE + ADC_O_SSFIFO3),
 			_sndbufA,
-			1024);
+			SAMPLES);
 
 	uDMAChannelTransferSet(
 			UDMA_CHANNEL_ADC3 | UDMA_ALT_SELECT,
 			UDMA_MODE_PINGPONG,
 			(void *)(ADC0_BASE + ADC_O_SSFIFO3),
 			_sndbufB,
-			1024);
+			SAMPLES);
 
 	uDMAChannelEnable(UDMA_CHANNEL_ADC3);
 }
@@ -176,10 +176,10 @@ void _init_adc()
 void _test_sound()
 {
 	// uart print mean
-	uint16_t min = 0;
-	uint16_t max = 0;
-	uint32_t avg = 0;
-	uint16_t i = 0;
+	int16_t min = 0;
+	int16_t max = 0;
+	int32_t avg = 0;
+	int16_t i = 0;
 
 	for(i = 0; i < 1024; i++)
 	{
@@ -208,7 +208,7 @@ void _make_bins(float bins[], float real[], float im[], uint8_t binCount)
 	//
 
 	uint16_t i = 0, j = 0;
-	uint16_t binStart = 1;
+	uint16_t binStart = 1; // 1 seems to have a shit ton of weight
 	float min = 0;
 	float max = 0;
 
@@ -239,17 +239,30 @@ void sound_init()
 
 void sound_getFreq(float bins[], uint8_t binCount)
 {
+	_test_sound();
 	uint16_t i;
+	float avg = 0;
+
 	float real[SAMPLES];
 	float im[SAMPLES];
-
+	float twiddle = M_PI * 2 / (SAMPLES - 1);
 	if(!_currentBuf){
 		return;
 	}
 
 	for(i = 0; i < SAMPLES; i++)
 	{
-		real[i] = (float)_currentBuf[i] - 300.0;// 300, I donno.. the average fluxuates ...
+		avg += _currentBuf[i];
+	}
+
+	avg = avg / SAMPLES;
+
+	for(i = 0; i < SAMPLES; i++)
+	{
+		real[i] = (float)_currentBuf[i] - avg;// avg because the mean fluctuates due to loudness..
+
+		// hanning window
+		real[i] = real[i] * .5 * (1 - cosf(twiddle * i));
 		im[i] = 0;
 	}
 
