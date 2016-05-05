@@ -22,7 +22,7 @@ $(document).ready(function(){
            edison.getEvents();
        }, 100);
    });
-   
+         
    $('#edisonStop').on('click', function() {
        clearInterval(interval);
    });

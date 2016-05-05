@@ -4,4 +4,4 @@ var loading = {
     
 }
 
-module.exports = loading;
+module.exports = loading; 

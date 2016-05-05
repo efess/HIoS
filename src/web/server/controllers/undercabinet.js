@@ -68,43 +68,43 @@ router.post('/getState', function(req, res) {
 });
 
 router.post('/changeOptions', function(req,res) {
-    
-    var color = req.body.color;
-    var options = req.body.options || {};
-    var occupiedOpts = options.occupied;
-    var unoccupiedOpts = options.unoccupied;
-    var pallete = req.body.pallete;
-    
-    if(!occupiedOpts || !occupiedOpts || !color) {
-        res.send("ERROR NO DATA");
-        return;
-    }
-    var colorNum = (color.red << 16) | (color.green << 8) | color.blue
-    
-    var opt = parseInt(unoccupiedOpts.transition);
-    
-    opt <<= 3;
-    opt = opt | parseInt(unoccupiedOpts.animation); //anim
-
-    opt <<= 4;
-    opt = opt | parseInt(unoccupiedOpts.brightness); //bright
-
-    opt <<= 2;
-    opt = opt | parseInt(occupiedOpts.transition); //tran
-
-    opt <<= 3;
-    opt = opt | parseInt(occupiedOpts.animation); //anim
-
-    opt <<= 4;
-    opt = opt | parseInt(occupiedOpts.brightness); //bright
-
-    opt <<= 1;
-    opt = opt | 1; //occ
-    
-    if(pallete && pallete.length > 0) {
-        
-    }
     var client = mqtt.createClient(1880, 'localhost');
+    var options = req.body.options || {};
+    var pallete = req.body.pallete || options.occupied.pallete;
+    var color = req.body.color || options.occupied.color;
+    
+    if(options.occupied && options.unoccupied) {
+        var occupiedOpts = options.occupied;
+        var unoccupiedOpts = options.unoccupied;
+        
+        if(!occupiedOpts || !occupiedOpts || !color) {
+            res.send("ERROR NO DATA");
+            return;
+        }
+        
+        var opt = parseInt(unoccupiedOpts.transition);
+        
+        opt <<= 3;
+        opt = opt | parseInt(unoccupiedOpts.animation); //anim
+
+        opt <<= 4;
+        opt = opt | parseInt(unoccupiedOpts.brightness); //bright
+
+        opt <<= 2;
+        opt = opt | parseInt(occupiedOpts.transition); //tran
+
+        opt <<= 3;
+        opt = opt | parseInt(occupiedOpts.animation); //anim
+
+        opt <<= 4;
+        opt = opt | parseInt(occupiedOpts.brightness); //bright
+
+        opt <<= 1;
+        opt = opt | 1; //occ
+        
+        client.publish('/home/kitchen/cabinet/lights/update', 'opt,' + color + ',' + opt);
+    }
+    
     
     if(pallete && pallete.length > 0) {
         var palleteStr = 'pal';
@@ -114,7 +114,6 @@ router.post('/changeOptions', function(req,res) {
         client.publish('/home/kitchen/cabinet/lights/update', palleteStr);
     }
     
-    client.publish('/home/kitchen/cabinet/lights/update', 'opt,' + colorNum + ',' + opt);
     
     client.end();
     

@@ -2,7 +2,7 @@ var $ = require('jquery'),
     R = require('ramda'),
     Promise = require('promise'),
     ajax = require('./ajax'),
-    Chart = require('chart'),
+    //Chart = require('chart'),
     helper = require('./helper/chartHelper');
 
 var tempTypes = ['grill', 'meat'];
@@ -162,7 +162,7 @@ var smokes = {
             scaleLabel: " <%=value%>",
             scaleShowVerticalLines: false,
             scaleBeginAtZero: false
-        };
+        }; 
         var chartDataset = {
             'grill': {
                 labels: labels,
@@ -187,18 +187,18 @@ var smokes = {
             }
         };
         tempTypes.forEach(function(tempType){
-            var chartData = {
-                datasets: [chartDataset[tempType]],
-                labels: labels
-            };
-            if(!charts[tempType]) {
-                var ctx = document.getElementById(tempType + "History").getContext("2d");
-                var chart = new Chart(ctx).Line(chartData, chartOptions);
+            // var chartData = {
+            //     datasets: [chartDataset[tempType]],
+            //     labels: labels
+            // };
+            // if(!charts[tempType]) {
+            //     var ctx = document.getElementById(tempType + "History").getContext("2d");
+            //     var chart = new Chart(ctx).Line(chartData, chartOptions);
                 
-                charts[tempType] = chart;
-            } else {
-                charts[tempType].initialize(chartData);
-            }
+            //     charts[tempType] = chart;
+            // } else {
+            //     charts[tempType].initialize(chartData);
+            // }
         });
     }
 }

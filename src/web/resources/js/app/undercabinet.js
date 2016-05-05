@@ -1,11 +1,19 @@
 var R = require('ramda');
 var Promise = require('promise');
-var $ = require('jquery');
-var ajax = require('./ajax');
-var Chart = require('chart');
+//require('./test');
 var spectrum = require('spectrum');
-var fft = require('./helper/fft');
-
+var ajax = require('./ajax');
+var ReactDOM = require('react-dom');
+var React = require('react'); 
+//var Chart = require('chart');
+var spectrum = require('spectrum'); 
+//var fft = require('./helper/fft');
+//var $ = require('jquery');
+//var UndercabinetLightControl = require('../components/undercabinetLightControl');
+import fft from './helper/fft'
+import $ from 'jquery'
+import UndercabinetLightControl from '../components/undercabinetLightControl';
+ 
 var presets = {
     party: [
         0x5500AB, 0x84007C, 0xB5004B, 0xE5001B,
@@ -42,6 +50,12 @@ var presets = {
         0xABAB00, 0x56D500, 0x00FF00, 0x00D52A,
         0x00AB55, 0x0056AA, 0x0000FF, 0x2A00D5,
         0x5500AB, 0x7F0081, 0xAB0055, 0xD5002B
+    ],
+    jason: [
+        0x84007C, 0x84007C, 0x84007C, 0x0007F9,
+        0x0007F9, 0x0007F9, 0x84007C, 0x84007C,
+        0x84007C, 0x0007F9, 0x0007F9, 0x0007F9,
+        0x84007C, 0x84007C, 0x0007F9, 0x0007F9
     ]
 }
 var last = {
@@ -123,186 +137,187 @@ function changeBrightness(color, newBrightness) {
         b: Math.round((color.b * newBrightness) / maxValue),
     }
 }
-var doSoundTest = (function() {
-    var isSetup = false;
-    var node = null;
-    var audioContext = null;
-    var lastBuffer = [];
-    var getSample = true;
-    var chart = null;
-    var fqChart = null;
-    var fftData = [];
-    var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    var gainNode = audioContext.createGain();
-    gainNode.gain.value = 5;
+
+// var doSoundTest = (function() {
+//     var isSetup = false;
+//     var node = null;
+//     var audioContext = null;
+//     var lastBuffer = [];
+//     var getSample = true;
+//     var chart = null;
+//     var fqChart = null;
+//     var fftData = [];
+//     var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+//     var gainNode = audioContext.createGain();
+//     gainNode.gain.value = 5;
     
-    function setGraph() {
+//     function setGraph() {
         
-        var chartOptions = {
-            // Boolean - Whether to animate the chart
-            animation: false,
-            legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>",
-            responsive: false,
-            maintainAspectRatio: false,
-            pointDot: false,
-            scaleLabel: " ",
-            scaleShowVerticalLines: false,
-            scaleBeginAtZero: true,
+//         var chartOptions = {
+//             // Boolean - Whether to animate the chart
+//             animation: false,
+//             legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>",
+//             responsive: false,
+//             maintainAspectRatio: false,
+//             pointDot: false,
+//             scaleLabel: " ",
+//             scaleShowVerticalLines: false,
+//             scaleBeginAtZero: true,
             
 
-            // Boolean - Determines whether to draw tooltips on the canvas or not
-            showTooltips: false,
-            // Boolean - If we want to override with a hard coded scale
-            scaleOverride: true,
+//             // Boolean - Determines whether to draw tooltips on the canvas or not
+//             showTooltips: false,
+//             // Boolean - If we want to override with a hard coded scale
+//             scaleOverride: true,
 
-            // ** Required if scaleOverride is true **
-            // Number - The number of steps in a hard coded scale
-            scaleSteps: 32,
-            // Number - The value jump in the hard coded scale
-            scaleStepWidth: 8,
-            // Number - The scale 
-            scaleStartValue: 0
-        };
-        var chartDataset = {
-            label: "Meat",
-            fillColor: "rgba(178,141,91,0.2)",
-            pointColor: "rgba(178,141,91,1)",
-            pointStrokeColor: "#fff",
-            pointHighlightFill: "#fff",
-            pointHighlightStroke: "rgba(178,141,91,1)",
-            data: lastBuffer
-        };
-        var chartData = {
-            datasets: [chartDataset],
-            labels: R.map(function(){return '';}, new Array(1024))
-        };
-        if(!chart) {
-            var ctx = document.getElementById('sound-data-graph').getContext("2d");
-            var chart = new Chart(ctx).Line(chartData, chartOptions);
-        } else {
-            chart.initialize(chartData);
-        } 
+//             // ** Required if scaleOverride is true **
+//             // Number - The number of steps in a hard coded scale
+//             scaleSteps: 32,
+//             // Number - The value jump in the hard coded scale
+//             scaleStepWidth: 8,
+//             // Number - The scale 
+//             scaleStartValue: 0
+//         };
+//         var chartDataset = {
+//             label: "Meat",
+//             fillColor: "rgba(178,141,91,0.2)",
+//             pointColor: "rgba(178,141,91,1)",
+//             pointStrokeColor: "#fff",
+//             pointHighlightFill: "#fff",
+//             pointHighlightStroke: "rgba(178,141,91,1)",
+//             data: lastBuffer
+//         };
+//         var chartData = {
+//             datasets: [chartDataset],
+//             labels: R.map(function(){return '';}, new Array(1024))
+//         };
+//         if(!chart) {
+//             var ctx = document.getElementById('sound-data-graph').getContext("2d");
+//             var chart = new Chart(ctx).Line(chartData, chartOptions);
+//         } else {
+//             chart.initialize(chartData);
+//         } 
         
-        // bar chart
-        chartOptions = {
-            animation: false,
-            //Number - Pixel width of the bar stroke
-            barStrokeWidth : 1,
+//         // bar chart
+//         chartOptions = {
+//             animation: false,
+//             //Number - Pixel width of the bar stroke
+//             barStrokeWidth : 1,
 
-            //Number - Spacing between each of the X value sets
-            barValueSpacing : 1,
+//             //Number - Spacing between each of the X value sets
+//             barValueSpacing : 1,
 
-            //Number - Spacing between data sets within X values
-            barDatasetSpacing : 1,
+//             //Number - Spacing between data sets within X values
+//             barDatasetSpacing : 1,
             
-            // Boolean - whether to maintain the starting aspect ratio or not when responsive, if set to false, will take up entire container
-            maintainAspectRatio: true,
-            responsive: false,
-            // Boolean - Determines whether to draw tooltips on the canvas or not
-            showTooltips: false,
-            // Boolean - If we want to override with a hard coded scale
-            scaleOverride: true,
+//             // Boolean - whether to maintain the starting aspect ratio or not when responsive, if set to false, will take up entire container
+//             maintainAspectRatio: true,
+//             responsive: false,
+//             // Boolean - Determines whether to draw tooltips on the canvas or not
+//             showTooltips: false,
+//             // Boolean - If we want to override with a hard coded scale
+//             scaleOverride: true,
 
-            // ** Required if scaleOverride is true **
-            // Number - The number of steps in a hard coded scale
-            scaleSteps: 5,
-            // Number - The value jump in the hard coded scale
-            scaleStepWidth: 1000,
-            // Number - The scale 
-            scaleStartValue: 0
-        }; 
-        var data = fftData.splice(0, 512);
-        chartData = {
-            datasets: [{ 
-                label: "My First dataset",
-                fillColor: "rgba(220,220,220,0.5)",
-                strokeColor: "rgba(220,220,220,0.8)",
-                highlightFill: "rgba(220,220,220,0.75)",
-                highlightStroke: "rgba(220,220,220,1)",
-                data: data
-            }],
-            labels: R.map(function(){return '';}, data)
-        };
-        if(!fqChart) {
-            var ctx = document.getElementById('freq-data-graph').getContext("2d");
-            var fqChart = new Chart(ctx).Bar(chartData, chartOptions);
-        } else {
-            fqChart.initialize(chartData);
-        }
-    }
+//             // ** Required if scaleOverride is true **
+//             // Number - The number of steps in a hard coded scale
+//             scaleSteps: 5,
+//             // Number - The value jump in the hard coded scale
+//             scaleStepWidth: 1000,
+//             // Number - The scale 
+//             scaleStartValue: 0
+//         }; 
+//         var data = fftData.splice(0, 512);
+//         chartData = {
+//             datasets: [{ 
+//                 label: "My First dataset",
+//                 fillColor: "rgba(220,220,220,0.5)",
+//                 strokeColor: "rgba(220,220,220,0.8)",
+//                 highlightFill: "rgba(220,220,220,0.75)",
+//                 highlightStroke: "rgba(220,220,220,1)",
+//                 data: data
+//             }],
+//             labels: R.map(function(){return '';}, data)
+//         };
+//         if(!fqChart) {
+//             var ctx = document.getElementById('freq-data-graph').getContext("2d");
+//             var fqChart = new Chart(ctx).Bar(chartData, chartOptions);
+//         } else {
+//             fqChart.initialize(chartData);
+//         }
+//     }
     
-    function setup() {
-        if(isSetup){
-            return;
-        }
-        isSetup = true;
-        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
-        navigator.getUserMedia(
-            { audio: true }, 
-            function(stream) {
-                var source = audioContext.createMediaStreamSource(stream);
-                node = audioContext.createScriptProcessor(1024, 1, 1);
-                node.onaudioprocess = (e) => {
-                    if (!getSample) { return; }
+//     function setup() {
+//         if(isSetup){
+//             return;
+//         }
+//         isSetup = true;
+//         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+//         navigator.getUserMedia(
+//             { audio: true }, 
+//             function(stream) {
+//                 var source = audioContext.createMediaStreamSource(stream);
+//                 node = audioContext.createScriptProcessor(1024, 1, 1);
+//                 node.onaudioprocess = (e) => {
+//                     if (!getSample) { return; }
                     
-                    var thisBuffer = e.inputBuffer.getChannelData(0);
+//                     var thisBuffer = e.inputBuffer.getChannelData(0);
                     
-                    //normalize to 8 bit
-                    for(var i = 0; i < 1024; i++) { 
-                        lastBuffer[i] = Math.floor((thisBuffer[i] + 1) * 128);
-                    }
+//                     //normalize to 8 bit
+//                     for(var i = 0; i < 1024; i++) { 
+//                         lastBuffer[i] = Math.floor((thisBuffer[i] + 1) * 128);
+//                     }
                     
-                    getSample = false
-                }; 
+//                     getSample = false
+//                 }; 
                 
-                // source -> gain -> output buffer
+//                 // source -> gain -> output buffer
                  
-                source.connect(gainNode);
-                gainNode.connect(node);
-                node.connect(audioContext.destination); 
+//                 source.connect(gainNode);
+//                 gainNode.connect(node);
+//                 node.connect(audioContext.destination); 
                 
-            }, 
-            function(){/*lol*/}
-        );
-    } 
-    function newObj() {
-        return {re:0, im:0};
-    }
-    function makeRec(len) {
-        var arr = [];
-        for(var i = 0; i < len; i++) {
-            arr[i] = {re: 0, im: 0};
-        }
-        return arr;
-    };
+//             }, 
+//             function(){/*lol*/}
+//         );
+//     } 
+//     function newObj() {
+//         return {re:0, im:0};
+//     }
+//     function makeRec(len) {
+//         var arr = [];
+//         for(var i = 0; i < len; i++) {
+//             arr[i] = {re: 0, im: 0};
+//         }
+//         return arr;
+//     };
   
-    return function() { 
-        //
-        var test = [1,1,1,1,0,0,0,0];
+//     return function() { 
+//         //
+//         var test = [1,1,1,1,0,0,0,0];
         
-        var result = test.slice();
+//         var result = test.slice();
         
-        fft.cfft(result);
+//         fft.cfft(result);
         
-        return;
-        //
-        setup(); 
-        getSample = true;
-        setTimeout(function() { 
-            var fftResult = lastBuffer.slice();
-            //fftResult = fft.realFft(lastBuffer, 0, 1024, 1, makeRec(1024));
-            fft.cfft(fftResult);
-            fftData = R.map(
-                function(fact){  
-                    return Math.sqrt(Math.pow(fact.re, 2) + Math.pow(fact.im, 2));
-                }, 
-                fftResult); 
+//         return;
+//         //
+//         setup(); 
+//         getSample = true;
+//         setTimeout(function() { 
+//             var fftResult = lastBuffer.slice();
+//             //fftResult = fft.realFft(lastBuffer, 0, 1024, 1, makeRec(1024));
+//             fft.cfft(fftResult);
+//             fftData = R.map(
+//                 function(fact){  
+//                     return Math.sqrt(Math.pow(fact.re, 2) + Math.pow(fact.im, 2));
+//                 }, 
+//                 fftResult); 
             
-            setGraph();
-            doSoundTest(); 
-        }, 120);  
-    } 
-}());
+//             setGraph();
+//             doSoundTest(); 
+//         }, 120);  
+//     } 
+// }());
 
 var undercabinet = {
     hookupEvents: function(){
@@ -329,8 +344,13 @@ var undercabinet = {
         selectList.append('<option value="0">None</option>');
         selectList.append('<option value="1">Smooth Color motion</option>');
         selectList.append('<option value="2">Twinkle</option>');
+        selectList.append('<option value="3">Rainbow</option>');
         selectList.append('<option value="4">Runner</option>');
         selectList.append('<option value="5">Discrete</option>');
+        selectList.append('<option value="6">Fire</option>');
+        selectList.append('<option value="7">Frequency</option>');
+        
+        $('#testOne').append('<paper-item>Testing</paper-item>');
         
         var transitionLists = $('.transition-list');
         
@@ -381,34 +401,16 @@ var undercabinet = {
     },
     sendToDevice: function() {
         var payload = {
-            color: {
-                red: $('input', $('#color-red')).val(),
-                green: $('input', $('#color-green')).val(),
-                blue: $('input', $('#color-blue')).val()
-            },
-            options: {
-                occupied: {
-                    brightness: $('.occupied .brightness input').val(),
-                    animation: $('.occupied .animation select').val(),
-                    transition: $('.occupied .transition select').val(),
-                },
-                unoccupied: {
-                    brightness: $('.unoccupied .brightness input').val(),
-                    animation: $('.unoccupied .animation select').val(),
-                    transition: $('.unoccupied .transition select').val(),
-                }
-            }
+            pallete: []
+        };
+        
+        var $palleteSetting = $('.pallete-setting');
+        
+        for(var i = 0; i < 16; i++ ){
+            var color = $('.p' + i, $palleteSetting).spectrum("get");
+            payload.pallete.push((color._r << 16) | (color._g << 8) | (color._b));
         }
-        // Only send pallete if it changed
-        if(changedPallete) {
-            var pallete = [];
-            var $palleteSetting = $('.pallete-setting');
-            for(var i = 0; i < 16; i++ ){
-                var color = $('.p' + i, $palleteSetting).spectrum("get");
-                pallete.push((color._r << 16) | (color._g << 8) | (color._b));
-            }
-            payload.pallete = pallete;
-        }
+        
         undercabinet.postChanges(payload);
         changedPallete = false;
     },
@@ -785,9 +787,13 @@ var undercabinet = {
 }
 
 $(document).ready(function(){
-
+    ReactDOM.render(
+        <UndercabinetLightControl/>,
+        document.getElementById('undercabinet-light-control')
+    );
+     
     undercabinet.hookupEvents();
-    undercabinet.pullCurrentState();
+    setTimeout(undercabinet.pullCurrentState, 2000);
 }); 
  
 module.exports = undercabinet;
