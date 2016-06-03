@@ -1,6 +1,6 @@
 import React from 'react';
-import SelectField from 'material-ui/lib/SelectField';
-import MenuItem from 'material-ui/lib/menus/menu-item';
+import SelectField from 'material-ui/SelectField';
+import MenuItem from 'material-ui/MenuItem';
 
 const presets = {
     party: [
@@ -76,6 +76,7 @@ function getMenuItem(key, preset) {
     
     //background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
     return <MenuItem 
+        key={key} 
         value={key} 
         primaryText={key}
         secondaryText="asdf"

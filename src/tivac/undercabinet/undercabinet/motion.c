@@ -97,10 +97,7 @@ bool motion_get_state()
 	uint16_t currentSecond = _msCounter / 1000;
 	if(currentSecond != _current_second)
 	{
-		char temp[20];
-		sprintf(temp,"second...\r\n");
 		_current_second = currentSecond;
-		UARTprintf(temp);
 	}
 	uint32_t now = _msCounter;
 
@@ -120,5 +117,4 @@ void motion_init(void)
 
 	configure_millisecond_timer();
 	configure_motion_gpio();
-	UARTprintf("Init motion..\r\n");
 }

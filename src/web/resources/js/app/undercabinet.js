@@ -14,6 +14,9 @@ import fft from './helper/fft'
 import $ from 'jquery'
 import UndercabinetLightControl from '../components/undercabinetLightControl';
  
+ import getMuiTheme from 'material-ui/styles/getMuiTheme';
+ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider'
+ 
 var presets = {
     party: [
         0x5500AB, 0x84007C, 0xB5004B, 0xE5001B,
@@ -788,12 +791,15 @@ var undercabinet = {
 
 $(document).ready(function(){
     ReactDOM.render(
-        <UndercabinetLightControl/>,
+        <MuiThemeProvider muiTheme={getMuiTheme()}>
+            <UndercabinetLightControl/>
+        </MuiThemeProvider>
+        ,
         document.getElementById('undercabinet-light-control')
     );
      
-    undercabinet.hookupEvents();
-    setTimeout(undercabinet.pullCurrentState, 2000);
+    //undercabinet.hookupEvents();
+    //setTimeout(undercabinet.pullCurrentState, 2000);
 }); 
- 
+
 module.exports = undercabinet;

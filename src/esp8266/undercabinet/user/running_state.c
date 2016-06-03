@@ -4,6 +4,8 @@
 #include "user_interface.h"
 #include "light.h"
 #include "config.h"
+#include "../modules/include/cdecode.h"
+#include "../modules/include/cencode.h"
 
 State* current_state;
 ETSTimer outgoing_updates_timer;
@@ -45,10 +47,10 @@ void state_handle_outgoing_updates()
     // Arduino emits this byte when starting up or setting up UART
     if(uart0_read() == 0xE0)
     {
-        // update after 5 seconds.. wait for arduino to load...
-        current_state->update_after_this_time = system_get_time() + (5 * 1000 * 1000);
-        current_state->needsOptionSend = true;
-        current_state->needsPalleteSend = true;
+        // update after 2 seconds
+        current_state->update_after_this_time = system_get_time() + (2 * 1000 * 1000);
+        current_state->needsConfigSend = true;
+        INFO("Received config update request byte\r\n");
     }
 
     if(system_get_time() < current_state->update_after_this_time)
@@ -56,21 +58,12 @@ void state_handle_outgoing_updates()
         return;
     }
 
-    if(current_state->needsOptionSend)
+    if(current_state->needsConfigSend)
     {
-        INFO("SENDIG OPT UPDATE\r\n");
-        if(light_send_options(sysCfg.light_color, sysCfg.light_options))
+        INFO("SENDIG CONFIG UPDATE\r\n");
+        if( light_send_config(sysCfg.device_config, sysCfg.device_config_length))
         {
-            current_state->needsOptionSend = false;
-        }
-    }
-
-    if(current_state->needsPalleteSend)
-    {
-        INFO("SENDIG PAL UPDATE\r\n");
-        if(light_send_pallete(sysCfg.light_pallete, sysCfg.light_pallete_size))
-        {
-            current_state->needsPalleteSend = false;
+            current_state->needsConfigSend = false;
         }
     }
 }
@@ -78,142 +71,73 @@ void state_handle_outgoing_updates()
 void state_init()
 {
     current_state = (State*)os_zalloc(sizeof(State));
-    current_state->update_after_this_time = system_get_time() + (5 * 1000 * 1000);
-    current_state->needsOptionSend = true; // send data to controller
-    current_state->needsPalleteSend = true;
+    current_state->update_after_this_time = system_get_time() + (2 * 1000 * 1000);
+    current_state->needsConfigSend = true; // send data to controller
 
     os_timer_disarm(&outgoing_updates_timer);
     os_timer_setfn(&outgoing_updates_timer, (os_timer_func_t *)state_handle_outgoing_updates);
-    os_timer_arm(&outgoing_updates_timer, 3000, 1);
+    os_timer_arm(&outgoing_updates_timer, 1000, 1);
 }
 
 void state_update()
 {
 }
 
-void handle_mqtt_options_update(char* updateStr)
+void handle_mqtt_config_update(char* base64Update)
 {
-    uint32_t newOptions = 0;
-    uint32_t newColor = 0;
+    char* thisTry = "KAoAAAIDAwAAAAAAAAD/AP///wAA/wAA////AAAA/wD///8AAP8AAP///wAAAP8A////AAD/AAD///8AAAD/AP///wAA/wAA////AAECBABhEQQA/wAAAP8AAAD/AAAA/wAAAP///wD///8A/wAAAAD/AAAA/wAA/wAAAP8AAAD///8A////AP8AAAAA/wAA/wAAAA==";
+    uint8_t* bytes = (uint8_t*)os_malloc(150);
+    uint16_t decoded = base64_decode_chars(thisTry, strlen(thisTry), (char*)bytes);
+    INFO("Decoded: %d\r\n", decoded);
 
-    uint8_t tempArr[11];
-    uint8_t *currPtr = updateStr;
-    uint8_t *nextPtr;
-    uint8_t sizeOfVal;
+    uint16_t expectedLength = base64_decode_expected_len(os_strlen(base64Update));
+    INFO("Update length %d\r\n", os_strlen(base64Update));
 
-    sizeOfVal = find_next_value(currPtr, &nextPtr, tempArr);
-    if(sizeOfVal && sizeOfVal <= 10) {
-        // first color
-        newColor = atoi(tempArr);
+    if(expectedLength > DEVICE_CONFIG_MAX) {
+        INFO("Data update is too large\r\n");
+        return;
+    }
+    if(expectedLength == 0) {
+        INFO("No data to update\r\n");
+        return;
     }
 
-    currPtr = nextPtr;
+    // compare to make sure we don't waste write cycles.
+    char* newUpdate = (char*)os_zalloc(expectedLength);
 
-    sizeOfVal = find_next_value(currPtr, &nextPtr, tempArr);
-    if(sizeOfVal && sizeOfVal <= 10) {
-        // now Options
-        newOptions = atoi(tempArr);
+    uint16_t actualLength = base64_decode_chars(base64Update, os_strlen(base64Update), newUpdate);
+    INFO("%d\r\n", actualLength);
+
+    if(sysCfg.device_config_length != actualLength &&
+        os_memcmp(newUpdate, sysCfg.device_config, actualLength) == 0)
+    {
+        INFO("No change in update\r\n");
+        os_free(newUpdate);
+        return;
     }
 
-    // tell timer we need to send stuff
-    INFO("newOptions %d\r\n", newOptions);
-    INFO("newColor %d\r\n", newColor);
-    sysCfg.light_options = newOptions;
-    sysCfg.light_color = newColor;
-    current_state->needsOptionSend = true;
+
+    sysCfg.device_config_length = actualLength;
+    os_memcpy(sysCfg.device_config, newUpdate, actualLength);
+    os_free(newUpdate);
+
+    CFG_Save();
+
+    current_state->needsConfigSend = true;
+    INFO("Received new update length %d\r\n", actualLength);
 }
 
-void handle_mqtt_pallete_update(char* updateStr)
+void handle_mqtt_request(char **respBuffer)
 {
-    uint32_t newPallete[16];
-    uint8_t palleteSize = 0;
+    uint16_t expectedLength = base64_encode_expected_len(sysCfg.device_config_length);
+    char* allocBuffer = (char*)os_zalloc(expectedLength + 1); // caller MUST free!!!\
 
-    uint8_t i;
-    uint8_t tempArr[11];
-    uint8_t *currPtr = updateStr;
-    uint8_t *nextPtr;
-    uint8_t sizeOfVal;
+    base64_encode_chars(sysCfg.device_config, sysCfg.device_config_length, allocBuffer);
 
-    while((sizeOfVal = find_next_value(currPtr, &nextPtr, tempArr))
-          && palleteSize < 16)
-    {
-        if(sizeOfVal <= 10) {
-            newPallete[palleteSize++] = atoi(tempArr);
-        }
+    allocBuffer[expectedLength] = '\0';
 
-        currPtr = nextPtr;
-    }
+    INFO("3 - length: %d\r\n", os_strlen(allocBuffer));
 
-
-    // tell timer we need to send stuff
-    for(i = 0; i < palleteSize; i++)
-    {
-        INFO("newPallete %d\r\n", newPallete[i]);
-    }
-    memcpy(sysCfg.light_pallete, newPallete, palleteSize * sizeof(uint32_t));
-    sysCfg.light_pallete_size = palleteSize;
-    current_state->needsPalleteSend = true;
-}
-
-void handle_mqtt_update(uint8_t *updateStr)
-{
-    uint8_t tempArr[11];
-    uint8_t *currPtr = updateStr;
-    uint8_t *nextPtr;
-    uint8_t sizeOfVal;
-
-    sizeOfVal = find_next_value(currPtr, &nextPtr, tempArr);
-    if(sizeOfVal > 0)
-    {
-        if(strcmp(tempArr, "opt") == 0)
-        {
-            INFO("Handling Options update\r\n");
-            handle_mqtt_options_update(nextPtr);
-        }
-        else if(strcmp(tempArr, "pal") == 0)
-        {
-            INFO("Handling Pallete update\r\n");
-            handle_mqtt_pallete_update(nextPtr);
-        }
-        CFG_Save();
-    }
-    else
-    {
-        INFO("No data in update\r\n");
-    }
-}
-
-void handle_mqtt_request(uint8_t *respBuffer)
-{
-    char temp[12];
-    uint8_t *nextPos = respBuffer;
-    uint8_t length = 0, i = 0;
-
-    os_memcpy(nextPos, "opt", 3);
-    nextPos += 3;
-
-    os_sprintf(temp, ",%d", sysCfg.light_color);
-    length = os_strlen(temp);
-    os_memcpy(nextPos, temp, length);
-    nextPos += length;
-
-    os_sprintf(temp, ",%d", sysCfg.light_options);
-    length = os_strlen(temp);
-    os_memcpy(nextPos, temp, length);
-    nextPos += length;
-
-    os_memcpy(nextPos, ",pal", 4);
-    nextPos += 4;
-
-    for(i = 0; i < sysCfg.light_pallete_size; i++)
-    {
-
-        os_sprintf(temp, ",%d", sysCfg.light_pallete[i]);
-        length = os_strlen(temp);
-        os_memcpy(nextPos, temp, length);
-        nextPos += length;
-    }
-
-    *nextPos = 0;
+    *respBuffer = allocBuffer;
 }
 

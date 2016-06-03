@@ -21,6 +21,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t occupiedTimeout; // seconds
+	uint8_t alwaysOn;
 	RoomStateSettings occupied;
 	RoomStateSettings unoccupied;
 } Settings;

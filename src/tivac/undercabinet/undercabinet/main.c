@@ -1,3 +1,7 @@
+// PIN CONFIG
+// PB7 - Pixels
+//
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -70,9 +74,12 @@ void configure_uart0(void)
     UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
 
     //
-    // Initialize the UART for console I/O.
+    // Initialize the UART
     //
     UARTStdioConfig(0, 115200, 16000000);
+
+    // Disabling echoing RX chars to TX
+    UARTEchoSet(false);
 }
 
 void check_change_state()
@@ -115,6 +122,8 @@ int main(void)
 
 	animation_init();
 
+	update_init();
+
 	// allocate state/settings memory
 	_settings = (Settings*)malloc(sizeof(Settings));
 
@@ -141,6 +150,7 @@ int main(void)
 	uint32_t delay = (MAP_SysCtlClockGet() / 1000) * 20; // 20 ms (clock sycles)
 
 	animation_changeState(_pixels, _settings, true);
+
 
 	while (1) {
 		MAP_SysCtlDelay(delay);

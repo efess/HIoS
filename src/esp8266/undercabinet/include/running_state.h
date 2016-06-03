@@ -8,11 +8,10 @@
 
 typedef struct {
     uint32_t update_after_this_time;
-    bool needsOptionSend;
-    bool needsPalleteSend;
+    bool needsConfigSend;
 } State;
 
 void state_init();
 void state_update();
-void handle_mqtt_update(uint8_t *reqBuffer);
-void handle_mqtt_request(uint8_t *respBuffer);
+void handle_mqtt_config_update(char *reqBuffer);
+void handle_mqtt_request(char **respBuffer);

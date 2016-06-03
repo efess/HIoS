@@ -1,7 +1,8 @@
 import React from 'react';
 import RoomStateSettings from './roomStateSettings';
-import Tabs from 'material-ui/lib/tabs/tabs';
-import Tab from 'material-ui/lib/tabs/tab';
+import Tabs from 'material-ui/Tabs';
+import Tab from 'material-ui/Tabs/Tab';
+import TextField from 'material-ui/TextField'
 import injectTapEventPlugin from 'react-tap-event-plugin';
 import ajax from '../app/ajax';
 import $ from 'jquery'
@@ -26,13 +27,13 @@ export default class UndercabinetLightControl extends React.Component {
         this.state = {
             value: 'occupied',
         };
-        
+         
         this.handleChange = this.handleChange.bind(this);
     }
     
     sendUpdate(newState) {
         var payload = {
-            color: newState.occupied.color,
+            color: (newState.occupied || {}).color || 0,
             options: {
                 occupied: newState.occupied,
                 unoccupied: newState.unoccupied
@@ -55,18 +56,19 @@ export default class UndercabinetLightControl extends React.Component {
         this.serverRequest =  ajax.post('/undercabinet/getState', '')
             .then(function(resp) {
                 
-                var newState = {
-                    unoccupied: resp.options.unoccupied,
-                    occupied: resp.options.occupied
-                };
+                // var newState = {
+                //     pirTimeout: 2700,
+                //     unoccupied: resp.options.unoccupied,
+                //     occupied: resp.options.occupied
+                // };
                 
-                newState.unoccupied.color = resp.color;
-                newState.unoccupied.pallete = resp.pallete;
+                // newState.unoccupied.color = resp.color;
+                // newState.unoccupied.pallete = resp.pallete;
                 
-                newState.occupied.color = resp.color;
-                newState.occupied.pallete = resp.pallete;
+                // newState.occupied.color = resp.color;
+                // newState.occupied.pallete = resp.pallete;
                 
-                component.setState(newState);
+                component.setState(resp.options);
             }, function _fail() {
                 // statusBox.addClass('error-message');
                 // statusBox.text("Failed polling device... Yell at Joe!");
@@ -84,6 +86,9 @@ export default class UndercabinetLightControl extends React.Component {
 
     updateRoomSettings(name) {
         return function(key,value) {
+            if(!this.state[name]) {
+                this.state[name] = {};
+            }
             var settings = this.state[name];
             settings[key] = value;
             this.sendUpdate(this.state);
@@ -110,6 +115,7 @@ export default class UndercabinetLightControl extends React.Component {
             marginTop: '20px'
         };
         return <div>
+                    
                     <Tabs value={this.state.value} onChange={this.handleChange}>
                         <Tab label="Occupied" value="occupied">
                             <div style={divStyle}>

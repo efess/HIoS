@@ -239,7 +239,7 @@ void sound_init()
 
 void sound_getFreq(float bins[], uint8_t binCount)
 {
-	_test_sound();
+	//_test_sound();
 	uint16_t i;
 	float avg = 0;
 

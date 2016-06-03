@@ -8,5 +8,5 @@
 
 uint8_t settings_getBrightness(uint8_t settings_brightness)
 {
-	return settings_brightness << 5;
+	return settings_brightness << 4;
 }

@@ -11,7 +11,7 @@ var mqBroker = require('./mqtt/broker');
 function startServer(config){
     // view engine setup
     app.set('views', path.join(__dirname, 'views'));
-    app.set('view engine', 'jade');
+    app.set('view engine', 'pug');
     app.use(express.static(path.join(__dirname, '../public')));    
     
     app.use(bodyParser.urlencoded({ extended: true }));
@@ -29,10 +29,10 @@ cfg.load()
     .then(function(config){
         return db.init(config.store)
             .then(schema.upgrade)
-            .then(mqBroker.start,
-                function(err){
-                    console.log("Failure init db, exiting\n" + err);
-                })
+            // .then(mqBroker.start,
+            //     function(err){
+            //         console.log("Failure init db, exiting\n" + err);
+            //     })
             .then(function(){return startServer(config);},
                 function(err){
                     console.log("Failure init mq broker, exiting\n" + err);

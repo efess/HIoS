@@ -20,7 +20,7 @@ SDK_TOOLS	?= c:/Espressif/utils
 
 # esptool path and port
 ESPTOOL ?= $(SDK_TOOLS)/esptool.exe
-ESPPORT ?= COM3
+ESPPORT ?= COM7
 # Baud rate for programmer
 BAUD ?= 256000
 

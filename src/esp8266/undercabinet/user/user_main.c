@@ -106,18 +106,22 @@ void mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const cha
     INFO("topic %s\r\n", topicBuf);
     if(strcmp(TOPIC_SUB_OPTIONS_UPDATE, topicBuf) == 0)
     {
-        handle_mqtt_update(dataBuf);
+        handle_mqtt_config_update(dataBuf);
     }
     else if(strcmp(TOPIC_SUB_OPTIONS_REQUEST, topicBuf) == 0)
     {
-        char response[120];
-        memset(response, 0, 120);
+        char* response;
+//        //char response[DEVICE_CONFIG_MAX];
+//        memset(response, 0, );
 
-        handle_mqtt_request(response);
+        handle_mqtt_request(&response);
 
+        INFO("4\r\n");
         INFO(response);
 
         MQTT_Publish(client, TOPIC_PUB_OPTIONS_RESPONSE, response, strlen(response), 0, 0);
+        INFO("5\r\n");
+        os_free(response);
     }
 
 	os_free(topicBuf);

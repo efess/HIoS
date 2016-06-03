@@ -1,27 +1,27 @@
 import React from 'react';
 import R from 'ramda';
 import Pallete from './pallete';
-import Slider from 'material-ui/lib/slider';
-import SelectField from 'material-ui/lib/SelectField';
-import MenuItem from 'material-ui/lib/menus/menu-item';
+import Slider from 'material-ui/Slider';
+import SelectField from 'material-ui/SelectField';
+import MenuItem from 'material-ui/MenuItem';
 import { SketchPicker } from 'react-color';
 import Modal from 'react-modal';
 
 const animations = [
-  <MenuItem value={0} primaryText="None"/>,
-  <MenuItem value={1} primaryText="Color motion"/>,
-  <MenuItem value={2} primaryText="Twinkle"/>,
-  <MenuItem value={3} primaryText="Rainbow"/>,
-  <MenuItem value={4} primaryText="Runner"/>,
-  <MenuItem value={5} primaryText="Discrete"/>,
-  <MenuItem value={6} primaryText="Fire"/>,
-  <MenuItem value={7} primaryText="Frequency"/>
+    {value: 0, text: 'None'},
+    {value: 1, text: 'Color motion'},
+    {value: 2, text: 'Twinkle'},
+    {value: 3, text: 'Rainbow'},
+    {value: 4, text: 'Runner'},
+    {value: 5, text: 'Discrete'},
+    {value: 6, text: 'Fire'},
+    {value: 7, text: 'Frequency'}
 ];
 
 const transitions = [
-  <MenuItem value={0} primaryText="None"/>,
-  <MenuItem value={1} primaryText="Fade"/>,
-  <MenuItem value={2} primaryText="Pixelate"/>
+    {value: 0, text: 'None'},
+    {value: 1, text: 'Fade'},
+    {value: 2, text: 'Pixelate'}
 ];
 
 function createPropSetter(propName) {
@@ -131,15 +131,15 @@ export default class RoomStateSettings extends React.Component {
             modal: {
                 overlay : {
                     position          : 'fixed',
-                    top               : 0,
-                    left              : 0,
-                    right             : 0,
-                    bottom            : 0,
+                    top               : '0px',
+                    left              : '0px',
+                    right             : '0px',
+                    bottom            : '0px',
                     backgroundColor   : 'rgba(255, 255, 255, 0.75)',
                     zIndex            : 3
                 },
                 content:{
-                    border: '0',
+                    border: '0px',
                     padding: '10px',
                     backgroundColor: 'rgba(255, 255, 255, 0.0)',
                     top: '90px',
@@ -192,7 +192,10 @@ export default class RoomStateSettings extends React.Component {
                                     fullWidth={true}
                                     value={data.animation}
                                     onChange={createPropSetter('animation').bind(this)}
-                                >{animations}
+                                >
+                                    {animations.map(function(animation) {
+                                        return <MenuItem key={animation.value} value={animation.value} primaryText={animation.text}/>;
+                                    })}
                                 </SelectField>
                             </div>
                         </div>
@@ -202,13 +205,16 @@ export default class RoomStateSettings extends React.Component {
                             <div style={s.control} className="col-xs-8"><SelectField
                                     fullWidth={true}
                                     value={data.transition}
-                                    onChange={createPropSetter('divansition').bind(this)}
-                                >{transitions}
+                                    onChange={createPropSetter('transition').bind(this)}
+                                >
+                                    {transitions.map(function(transition) {
+                                        return <MenuItem key={transition.value} value={transition.value} primaryText={transition.text}/>;
+                                    })}
                                 </SelectField>
                             </div>
                         </div>
                         <div style={s.row} className="row">
-                            <div style={s.label} className="col-xs-4">Pallete</div>
+                            <div style={s.label} className="col-xs-4">Pattern</div>
                             <div style={s.control} className="col-xs-8"><Pallete 
                                 pallete={data.pallete} 
                                 updateValue={createPropSetter('pallete').bind(this)} 

@@ -20,6 +20,8 @@
 #define OPTIONS_MASK_TRANS 0x00000180
 #define OPTIONS_MASK_TRANS_SHIFT 7
 
+#define MAX_PACKET_SIZE 32
+#define MAX_UPDATE_SIZE 318
 #define MAGIC_NUMBER 98
 #define UPDATE_REQUEST 0xE0
 #define UPDATE_FAIL 10
@@ -34,6 +36,38 @@ uint32_t bufferToUInt32(uint8_t *buffer)
 uint32_t threeByteBufferToUInt32(uint8_t *buffer)
 {
 	return ((uint32_t)buffer[2] << 16) | ((uint32_t)buffer[1] << 8) | (uint32_t)buffer[0];
+}
+
+uint16_t twoByteBufferToUInt16(uint8_t *buffer)
+{
+	return ((uint16_t)buffer[1] << 8) | (uint16_t)buffer[0];
+}
+
+void writeAck()
+{
+	char resp[1];
+	resp[0] = MAGIC_NUMBER;
+	UARTwrite(resp, 1);
+}
+
+void writeFail()
+{
+	char resp[1];
+	resp[0] = UPDATE_FAIL;
+	UARTwrite(resp, 1);
+}
+
+int16_t readUartChar()
+{
+	uint32_t tries = 0;
+	while(tries++ < READ_TRIES)
+	{
+		if(UARTRxBytesAvail() > 0)
+		{
+			return UARTgetc();
+		}
+	}
+	return -1;
 }
 
 int8_t readUart(uint8_t* buffer, uint8_t len)
@@ -58,6 +92,108 @@ int8_t readUart(uint8_t* buffer, uint8_t len)
 	}
 
 	return success;
+}
+
+int8_t read_stream(uint8_t* configUpdate)
+{
+	uint8_t buf[MAX_PACKET_SIZE];
+	uint16_t total_length = 0;
+
+	int8_t packet_length = 0;
+
+	uint16_t data_offset = 0;
+
+	uint8_t mini_buf[2];
+	int8_t lastPacketNum = -1;
+
+	uint8_t first = 1;
+	int16_t test = 0;
+	while(true)
+	{
+		test = readUartChar();
+		if (test != 98)
+		{
+			return -1;
+		}
+		test = readUartChar();
+		if (test != lastPacketNum + 1)
+		{
+			//"Out of order packet");
+			return -1;
+		}
+		if(first == 1)
+		{
+			first = 0;
+			if(readUartChar() == -1)
+			{
+				// type is config
+				return -1;
+			}
+			if(readUart(mini_buf, 2) == -1)
+			{
+				return -1;
+			}
+			total_length = twoByteBufferToUInt16(mini_buf);
+		}
+
+		packet_length = readUartChar();
+		if(packet_length < 0)
+		{
+			return -1;
+		}
+		if(readUart(buf, packet_length) < 0)
+		{
+			return -1;
+		}
+
+		memcpy(configUpdate + data_offset, buf, packet_length);
+
+		lastPacketNum++;
+
+		data_offset = data_offset + packet_length;
+
+		if(data_offset == total_length)
+		{
+			return 1;
+		}
+
+		writeAck();
+	}
+}
+
+uint16_t parse_config_room_settings(RoomStateSettings* roomSettings, uint8_t* buffer)
+{
+	uint32_t* uint32Ptr = (uint32_t*)buffer;
+	uint16_t byteCount = 0;
+	uint8_t i = 0;
+	roomSettings->transition = buffer[byteCount++];
+	roomSettings->animation = buffer[byteCount++];
+	roomSettings->brightness = buffer[byteCount++];
+	byteCount++;
+
+	roomSettings->color = uint32Ptr[byteCount / 4];
+	byteCount += 4;
+
+	for(i = byteCount / 4; i < 16; i++)
+	{
+		roomSettings->colorPallete[i] = uint32Ptr[i];
+		byteCount += 4;
+	}
+
+	return byteCount;
+}
+
+void parse_config(Settings* settings, uint8_t* buffer)
+{
+	uint16_t* uint16Ptr = (uint16_t*)buffer;
+	uint16_t byteCounter = 0;
+
+	settings->occupiedTimeout = uint16Ptr[0];
+	settings->alwaysOn = buffer[3];
+
+	byteCounter += 4;// first 4 bytes are global settings
+	byteCounter += parse_config_room_settings(&settings->occupied, buffer + byteCounter);
+	byteCounter += parse_config_room_settings(&settings->unoccupied, buffer + byteCounter);
 }
 
 int8_t read_options(Settings* settings)
@@ -123,7 +259,12 @@ int8_t read_pallete(Settings* settings)
 
 	return 0;
 }
-
+uint8_t update_init(void)
+{
+	uint8_t update_val = UPDATE_REQUEST;
+	UARTwrite((char*)&update_val, 1);
+	return 1;
+}
 
 uint8_t update_check(Settings* settings)
 {
@@ -132,39 +273,68 @@ uint8_t update_check(Settings* settings)
 		return 0;
 	}
 
-	char response[1];
-	int8_t success = -1;
-	uint8_t testByte;
-
-	testByte = UARTgetc();
-	if(testByte == MAGIC_NUMBER)
+	uint8_t configUpdate[MAX_UPDATE_SIZE];
+	if(read_stream(configUpdate) < 0)
 	{
-		testByte = UARTgetc();
-		switch(testByte)
-		{
-			case 0:
-				success = read_options(settings);
-				break;
-			case 1:
-				success = read_pallete(settings);
-				break;
-		}
-	}
-
-	// Update failed, empty uart buffer
-	if(success < 0)
-	{
+		// Update failed, empty uart buffer
 		while(UARTRxBytesAvail())
 		{
 			UARTgetc();
 		}
-		response[0] = UPDATE_FAIL;
+
+		writeFail();
+		return 0;
 	}
 	else
 	{
-		response[0] = MAGIC_NUMBER;
+
+		writeAck();
+		parse_config(settings, configUpdate);
+		return 1;
 	}
 
-	UARTwrite(response, 1);
-	return success < 0 ? 0 : 1;
 }
+
+//uint8_t update_check(Settings* settings)
+//{
+//	if(UARTRxBytesAvail() == 0)
+//	{
+//		return 0;
+//	}
+//
+//	char response[1];
+//	int8_t success = -1;
+//	uint8_t testByte;
+//
+//	testByte = UARTgetc();
+//	if(testByte == MAGIC_NUMBER)
+//	{
+//		testByte = UARTgetc();
+//		switch(testByte)
+//		{
+//			case 0:
+//				success = read_options(settings);
+//				break;
+//			case 1:
+//				success = read_pallete(settings);
+//				break;
+//		}
+//	}
+//
+//	// Update failed, empty uart buffer
+//	if(success < 0)
+//	{
+//		while(UARTRxBytesAvail())
+//		{
+//			UARTgetc();
+//		}
+//		response[0] = UPDATE_FAIL;
+//	}
+//	else
+//	{
+//		response[0] = MAGIC_NUMBER;
+//	}
+//
+//	UARTwrite(response, 1);
+//	return success < 0 ? 0 : 1;
+//}

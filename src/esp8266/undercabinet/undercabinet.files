@@ -43,3 +43,7 @@ driver/i2c.c
 include/driver/i2c.h
 include/driver/tsl2561.h
 driver/tsl2561.c
+modules/cdecode.c
+modules/cencode.c
+modules/include/cencode.h
+modules/include/cdecode.h

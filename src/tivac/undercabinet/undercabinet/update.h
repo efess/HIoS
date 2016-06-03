@@ -12,5 +12,6 @@
 #include <stdint.h>
 
 uint8_t update_check(Settings* settings);
+uint8_t update_init(void);
 
 #endif /* UPDATE_H_ */

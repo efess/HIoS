@@ -56,6 +56,8 @@
 #define OPTIONS_BITMASK_MOTION_ON 0x16
 #define OPTIONS_BITMASK_LIGHT_SENSE_ON 0x32
 
+#define DEVICE_CONFIG_MAX 318
+
 typedef struct{
 	uint32_t cfg_holder;
 	uint8_t device_id[16];
@@ -68,10 +70,13 @@ typedef struct{
     uint32_t mqtt_port;
 
     // LIGHT setup
-    uint32_t light_color;
-    uint32_t light_options;
-    uint8_t light_pallete_size;
-    uint32_t light_pallete[16];
+    uint8_t device_config[DEVICE_CONFIG_MAX];
+    uint16_t device_config_length;
+
+//    uint32_t light_color;
+//    uint32_t light_options;
+//    uint8_t light_pallete_size;
+//    uint32_t light_pallete[16];
 
 } SYSCFG;
 

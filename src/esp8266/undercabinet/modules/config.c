@@ -84,7 +84,6 @@ CFG_Load()
 	if(sysCfg.cfg_holder != CFG_HOLDER){
 		os_memset(&sysCfg, 0x00, sizeof sysCfg);
 
-
 		sysCfg.cfg_holder = CFG_HOLDER;
 
 		os_sprintf(sysCfg.sta_ssid, "%s", STA_SSID);
