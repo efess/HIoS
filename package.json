@@ -38,6 +38,7 @@
     "base64-js": "^1.1.2",
     "body-parser": "^1.15.1",
     "browserify": "^11.2.0",
+    "chart.js": "^2.1.4",
     "cookie-parser": "^1.4.3",
     "gulp-babel": "^6.1.2",
     "jquery": "^2.2.4",
