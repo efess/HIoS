@@ -16,23 +16,26 @@ export default class SmokerStatus extends React.Component {
         return "smokes/status2";
     }
 
+    updateTarget(probe, targetVal) {
+        // do it.
+        var test = 3;
+    }
+
     // getInitialState() {
     //     return {
     //         temps:  []
     //     };
     // }
 
-  componentDidMount() {
-    this.serverRequest = $.get(this.getRequestQuery(), function (result) {
-      
-      this.setState(result);
+    componentDidMount() {
+        this.serverRequest = $.get(this.getRequestQuery(), function (result) {
+            this.setState(result);
+        }.bind(this));
+    }
 
-    }.bind(this));
-  }
-
-  componentWillUnmount() {
-    this.serverRequest.abort();
-  }
+    componentWillUnmount() {
+        this.serverRequest.abort();
+    }
     render() {
         var output = (this.state || {}).temps || [];
         //var output = [];
@@ -41,10 +44,11 @@ export default class SmokerStatus extends React.Component {
                 margin: "10px"
             }
         }
-        return <div style={style.smokerStatusContainer}>
+        var that = this;
+        return <div>
             {
                 output.map(function(temp, i){
-                    return <BbqTempRow data={temp} key={i} />;
+                    return <BbqTempRow data={temp} key={i} targetChange={that.updateTarget.bind(that, i)}/>;
                 })  
             }
         </div>;

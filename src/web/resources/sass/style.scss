@@ -157,7 +157,14 @@ body {
     border: 0;
 }
 
-.axis--x path {
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
   display: none;
 }
 
