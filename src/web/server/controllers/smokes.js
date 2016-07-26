@@ -67,6 +67,34 @@ router.post('/newSession', function(req, res) {
         });
 });
 
+router.get('/status2', function(req, res){
+
+    var fakeData = {
+        temps: [
+            {   id: 1,
+                name: "grill",
+                current: 211,
+                target: 230,
+                graph: [
+                    { time: 123456789, temp: 110 },
+                    { time: 123456790, temp: 110 },
+                    { time: 123456791, temp: 110 },
+                    { time: 123456792, temp: 100 },
+                    { time: 123456793, temp: 105 },
+                ]
+            },
+            {
+                id: 2,
+                name: 'Steak',
+                current: 190,
+                target: 195
+            }
+        ] 
+    };
+    
+    res.json(fakeData);
+});
+
 router.get('/status', function(req, res) {
     var deviceId = req.query.deviceId;
     var fromTime = 0;

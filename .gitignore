@@ -8,6 +8,7 @@ local_config.json
 *.sln.docstates
 *.opensdf
 *.sdf
+*.xss
 .vs/
 .vscode/
 .settings/

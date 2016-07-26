@@ -1,13 +1,13 @@
 #ifndef _USER_CONFIG_H_
 #define _USER_CONFIG_H_
 
-#define CFG_HOLDER	0x00FF55B9	/* Change this value to load default configurations */
+#define CFG_HOLDER	0x00FF55C6	/* Change this value to load default configurations */
 #define CFG_LOCATION	0x3C	/* Please don't change or if you know what you doing */
 #define CLIENT_SSL_ENABLE
 
 /*DEFAULT CONFIGURATIONS*/
 
-#define MQTT_HOST			"mqtt.yourdomain.com"
+#define MQTT_HOST			"pihub.home.lan" //or "mqtt.yourdomain.com"
 #define MQTT_PORT			1880
 #define MQTT_BUF_SIZE		1024
 #define MQTT_KEEPALIVE		120	 /*second*/
@@ -16,8 +16,8 @@
 #define MQTT_USER			"DVES_USER"
 #define MQTT_PASS			"DVES_PASS"
 
-#define STA_SSID "test"
-#define STA_PASS "test"
+#define STA_SSID "Asus_Joes"
+#define STA_PASS "fuckingshit"
 #define STA_TYPE AUTH_WPA2_PSK
 
 #define MQTT_RECONNECT_TIMEOUT 	5	/*second*/

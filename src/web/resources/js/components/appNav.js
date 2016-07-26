@@ -3,36 +3,14 @@ import AppBar from 'material-ui/AppBar';
 import Drawer from 'material-ui/Drawer';
 import MenuItem from 'material-ui/MenuItem';
 
-// export default class AppNav extends React.Component {
-
-//   constructor(props) {
-//     super(props);
-//     this.state = {open: false};
-//   }
-
-//   handleToggle() {
-//     this.setState({open: !this.state.open});
-//   }
-
-//   render() {
-//     return (
-//       <div>
-//         <AppBar
-//           title="Undercabinet"
-//           iconClassNameRight="muidocs-icon-navigation-expand-more"
-//         />
-        
-//         <Drawer open={this.state.open}>
-//           <MenuItem>Kitchen</MenuItem>
-//           <MenuItem>Smoker</MenuItem>
-//         </Drawer>
-//       </div>
-//     );
-//   }
-// }
+const locationMap = {
+    '': 'Home',
+    'undercabinet': 'Undercabinet',
+    'smokes': 'Smoker'
+};
 
 export class AppNav extends React.Component {
-
+    
     constructor(props) {
       super(props);
       this.state = {open: false};
@@ -45,16 +23,23 @@ export class AppNav extends React.Component {
     closeDrawer() { 
       this.setState({ open: false }) 
     }
+
+    currentTitle() {
+        var loc = location.href;
+        var key = loc.substr(loc.lastIndexOf('/') + 1);
+        return locationMap[key] || 'Unknown';
+    }
     
     render() {
         return (
             <div>
                 <AppBar
-                    title="Title"
+                    title={this.currentTitle()}
                     iconClassNameRight="muidocs-icon-navigation-expand-more"
                     onLeftIconButtonTouchTap={this.handleToggle.bind(this)}
                 />
                 <Drawer open={this.state.open} onRequestChange={this.closeDrawer.bind(this)} docked={false}>
+                  <MenuItem href="/">Home</MenuItem>
                   <MenuItem href="/undercabinet">Kitchen</MenuItem>
                   <MenuItem href="/smokes">Smoker</MenuItem>
                 </Drawer>

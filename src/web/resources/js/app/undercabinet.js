@@ -790,13 +790,16 @@ var undercabinet = {
 }
 
 $(document).ready(function(){
-    ReactDOM.render(
-        <MuiThemeProvider muiTheme={getMuiTheme()}>
-            <UndercabinetLightControl/>
-        </MuiThemeProvider>
-        ,
-        document.getElementById('undercabinet-light-control')
-    );
+    var domElement = document.getElementById('undercabinet-light-control');
+    if(domElement) {
+        ReactDOM.render(
+            <MuiThemeProvider muiTheme={getMuiTheme()}>
+                <UndercabinetLightControl/>
+            </MuiThemeProvider>
+            ,
+            domElement
+        );
+    }
      
     //undercabinet.hookupEvents();
     //setTimeout(undercabinet.pullCurrentState, 2000);

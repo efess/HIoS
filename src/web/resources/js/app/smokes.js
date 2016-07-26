@@ -2,11 +2,19 @@ var $ = require('jquery'),
     R = require('ramda'),
     Promise = require('promise'),
     ajax = require('./ajax'),
+    Chart = require('chart.js'),
     //Chart = require('chart'),
     helper = require('./helper/chartHelper');
 
+import ReactDOM from'react-dom';
+import React from 'react'; 
+import SmokerStatus from '../components/smokerStatus';
+import getMuiTheme from 'material-ui/styles/getMuiTheme';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider'
+ 
+
 var tempTypes = ['grill', 'meat'];
-var deviceId = 'efbfbd0d-0d0f-efbf-bddd-8444efbfbd1a';
+var deviceId = '31316536-6633-3939-2d64-6362372d3436';
 var charts = {};
 var smokes = {
     hookupButton: function(){
@@ -187,18 +195,21 @@ var smokes = {
             }
         };
         tempTypes.forEach(function(tempType){
-            // var chartData = {
-            //     datasets: [chartDataset[tempType]],
-            //     labels: labels
-            // };
-            // if(!charts[tempType]) {
-            //     var ctx = document.getElementById(tempType + "History").getContext("2d");
-            //     var chart = new Chart(ctx).Line(chartData, chartOptions);
+            var chartData = {
+                datasets: [chartDataset[tempType]],
+                labels: labels
+            };
+            if(!charts[tempType]) {
+                var ctx = document.getElementById(tempType + "History").getContext("2d");
+                var chart = new Chart(ctx, {type: 'line',data: chartData, options:chartOptions});
                 
-            //     charts[tempType] = chart;
-            // } else {
-            //     charts[tempType].initialize(chartData);
-            // }
+                charts[tempType] = chart;
+            } else {
+                //charts[tempType].initialize(chartData);
+                charts[tempType].data.datasets = chartData.datasets;
+                charts[tempType].data.labels = chartData.labels;
+                charts[tempType].update();
+            }
         });
     }
 }
@@ -211,14 +222,25 @@ $(document).ready(function(){
     // }, 2000)
     // smokes.getStatus();
   
+  
     // for running:  
-    // (function refresh(){
-    //     smokes.getStatus();
-    //     setTimeout(function(){
-    //         refresh();
-    //     }, 1000)
-    // }());
-    
+    (function refresh(){
+        smokes.getStatus();
+        setTimeout(function(){
+            refresh();
+        }, 1003)
+    }());
+
+    var domElement = document.getElementById('smoker-status');
+    if(domElement) {
+        ReactDOM.render(
+            <MuiThemeProvider muiTheme={getMuiTheme()}>
+                <SmokerStatus/>
+            </MuiThemeProvider>
+            ,
+            domElement
+        );
+    }    
 });
 
 module.exports = smokes;
