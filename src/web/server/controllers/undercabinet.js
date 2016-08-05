@@ -178,7 +178,7 @@ router.post('/changeOptions', function(req, res) {
     client.publish('/home/kitchen/cabinet/lights/update', base64Str);
     
     res.send('SUCCESS published ' + base64Str.length + ' long: ' + base64Str);
-})
+});
 
 // router.post('/changeOptions', function(req,res) {
 //     var client = mqtt.createClient(1880, 'localhost');

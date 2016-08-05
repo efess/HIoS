@@ -7,8 +7,9 @@ var Promise = require('promise');
 
 // db changelog:
 // 0 - initial prototype
+// 2 - Changed smoker tables structure to work with multiple probes
     
-var latestVersion = 1
+var latestVersion = 2;
 var sqlList = [];
 
 function addSql(sql, version){
@@ -86,6 +87,23 @@ function getUpgradeSqls(currentVersion){
         upgradeSqls.push('CREATE INDEX idx_smokes_events_timestamp ON smokes_events(' +
             'timestamp  ASC' +
             ');');
+    }
+
+    if(currentVersion <= 1) {
+        // make this stuff actually make sense..
+        upgradeSqls.push('ALTER TABLE smokes_events CHANGE meatTemp probe0 FLOAT;');
+
+        upgradeSqls.push('ALTER TABLE smokes_events ADD probe1 FLOAT;');
+        upgradeSqls.push('ALTER TABLE smokes_events ADD probe2 FLOAT;');
+        upgradeSqls.push('ALTER TABLE smokes_events ADD probe3 FLOAT;');
+
+        upgradeSqls.push('ALTER TABLE smokes_events ADD probe0Target INTEGER;');
+
+        upgradeSqls.push('ALTER TABLE smokes_session ADD probeId INTEGER;');
+        upgradeSqls.push('ALTER TABLE smokes_session ADD target INTEGER;');
+        upgradeSqls.push('ALTER TABLE smokes_session CHANGE meat name varchar(20);');
+
+        upgradeSqls.push('ALTER TABLE smokes CHANGE meatTarget fanPulse INTEGER;');
     }
     
     return upgradeSqls;   
