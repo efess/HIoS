@@ -36,16 +36,41 @@ router.post('/changeTargets', function(req,res) {
         });
 });
 
-router.post('/updateSession', function(req, res) {
+router.post('/updateProbeTarget', function(req, res) {
+    var deviceId = req.body.deviceId || _testDeviceId;
+    var target = parseInt(req.body.target || 0);
+    var probeId = req.body.probeId || 0;
+
+    if(!probeId) {
+        res.send('Missing probeid');
+        return;
+    }
+
+    if(target < 50 || target > 1000) {
+        target = 0;
+    }
+
+    smokes.updateProbeTarget(deviceId, req.body.probeId, target)
+        .then(function _success(){
+            res.send("SUCCESS");
+        }, function _fail(err) {
+            res.send('Error: ' + err);
+        });
+});
+
+router.post('/closeSession', function(req, res) {
+    var deviceId = req.body.deviceId || _testDeviceId;
+    var target = parseInt(req.body.target || 0);
+    var probeId = req.body.probeId || 0;
+
     var tokens = [
         req.body.end ? new Date() : 0,
-        req.body.meat || '',
-        "Char-Griller AKORN", //req.body.smokerType || '',
         req.body.description || '',
-        req.body.deviceId || _testDeviceId
+        deviceId,
+        probeId
     ];
     
-    smokes.saveSession(tokens)
+    smokes.closeSession(tokens)
         .then(function _success(){
             res.send("SUCCESS");
         }, function _fail(err) {

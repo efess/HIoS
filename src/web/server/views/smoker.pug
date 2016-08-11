@@ -1,14 +1,7 @@
 extends layout
 
 block content
-    
-    select(id='granularity')
-        option(value='10') 10 seconds
-        option(value='60') 1 Minute
-        option(value='300', selected='selected') 5 Minutes
-        option(value='900') 15 Minutes
-        option(value='3600') 1 hour
 
     .content(style='margin: 10px;')
-        .container
+        .container-fluid
             #smoker-status

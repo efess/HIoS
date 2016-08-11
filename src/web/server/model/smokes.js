@@ -36,6 +36,13 @@ var smokes = {
     updateSession: function(tokens) {
         return db.query('UPDATE smokes_session SET end = ?, meat = ?, smokerType = ?, description = ? WHERE tableId = ?' +
             " (?, ?, ?, ?, ?)", tokens);
+    },
+    closeSession: function(tokens) {
+        return db.query('UPDATE smokes_session SET end = ?, description = ? WHERE deviceId = ? AND probeId = ?', tokens);
+    },
+    updateProbeTarget: function(deviceId, probeId, target){
+        return db.query('UPDATE smokes_session SET target = ? WHERE deviceId = ? AND probeId = ?', 
+            [target, deviceId, probeId]);
     }
 }
 module.exports = smokes;

@@ -141,7 +141,7 @@ var smokes = {
                     return Math.floor(hours) + fract(hours) + " hrs ago";
                 }
                 if(Math.floor(minutes) > 0) {
-                    return Math.floor(minutes) + fract(hours) + " ms ago";
+                    return Math.floor(minutes) + fract(hours) + " min ago";
                 }
                 else return seconds + " s ago";
             }            

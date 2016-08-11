@@ -3,6 +3,8 @@ import $ from 'jquery';
 import LabeledValue from './labeledValue';
 import TempGraph from './tempGraph';
 import ajax from '../../app/ajax';
+import Paper from 'material-ui/Paper';
+import SessionOptions from './sessionOptions';
 
 export default class BbqTempRow extends React.Component {
 
@@ -12,11 +14,19 @@ export default class BbqTempRow extends React.Component {
 
     static get defaultProps() {
         return {
+            closeSession: function() {}
         }
     }
 
-    handleTargetChange(e, value) {
-
+    handleTargetChange(value) {
+        return ajax.post('smokes/updateProbeTarget', {
+                probeId: this.props.probeId,
+                deviceId: '31316536-6633-3939-2d64-6362372d3436',
+                target: value
+            })
+            .then(this.loadSessions, function _fail(err) {
+                console.log('failed updating target: ' + err);
+            });
     }
 
     componentDidMount() {
@@ -24,8 +34,13 @@ export default class BbqTempRow extends React.Component {
 
     render() {
         var style = {
+            header: {
+                justifyContent: 'space-between',
+                position: 'relative',
+                display: 'flex'
+            },
             probeContainer: {
-                backgroundColor: '#F3F3F3',
+                //backgroundColor: '#F3F3F3',
                 margin: '5px'
             },
             probeCurrentTemp: {
@@ -48,14 +63,41 @@ export default class BbqTempRow extends React.Component {
             }
         }
 
-        var currentTemp = this.props.current && this.props.current.temp || '---';
-        var targetTemp = this.props.target || '---';
+        var currentTemp = this.props.current && 
+            this.props.current.temp && 
+            parseInt(this.props.current.temp)  || '---';
+
+        var targetTemp = this.props.target && parseInt(this.props.target) || '---';
     
-        return <div style={style.probeContainer} className="row">
-            <div className="col-md-5 hidden-sm-down"><TempGraph data={this.props.history || []}/></div>
-            <div className="col-md-3 col-xs-12 "><span style={style.probeName}>{this.props.name}</span></div>
-            <div className="col-md-2 col-xs-6 "><span style={style.probeCurrentTemp}>{currentTemp}°</span></div>
-            <div className="col-md-2 col-xs-6 "><LabeledValue color='#663300' size='4' value={targetTemp} name="Target" change={this.handleTargetChange.bind(this)}/></div>
-        </div>;
+        // Normal look.
+        // return <div style={style.probeContainer} className="row">
+        //     <div className="col-lg-5 hidden-md-down"><TempGraph data={this.props.history || []}/></div>
+        //     <div className="col-lg-3 col-md-6 col-sm-12"><span style={style.probeName}>{this.props.name}</span></div>
+        //     <div className="col-lg-2 col-md-3 col-sm-6 "><span style={style.probeCurrentTemp}>{currentTemp}°</span></div>
+        //     <div className="col-lg-2 col-md-3 col-sm-6"><LabeledValue color='#663300' size='4' value={targetTemp} name="Target" change={this.handleTargetChange.bind(this)}/></div>
+        // </div>;
+
+        var sessionOptions;
+        if(this.props.probeId > 0) {
+            sessionOptions = <SessionOptions onCloseSession={this.props.closeSession.bind(this)} probeId={this.props.probeId}/>;
+        }
+        return <Paper zDepth={1} rounded={false}>
+            <div style={style.probeContainer} className="row">
+                <div className="col-md-6 hidden-sm-down">
+                    <TempGraph data={this.props.history || []}/>
+                </div>
+                <div className="col-md-6 col-sm-12">
+                    <div className="row">
+                        <div className="col-sm-12" style={style.header}>
+                            <div style={style.probeName}>{this.props.name}</div>
+                            {sessionOptions}
+                            
+                        </div>
+                        <div className="col-sm-6 "><span style={style.probeCurrentTemp}>{currentTemp}°</span></div>
+                        <div className="col-sm-6"><LabeledValue color='#663300' size='4' value={targetTemp} name="Target" change={this.handleTargetChange.bind(this)}/></div>
+                    </div>
+                </div>
+            </div>
+        </Paper>;
     }
 }

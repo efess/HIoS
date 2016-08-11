@@ -22,8 +22,18 @@ export default class TempGraph extends React.Component {
     static get defaultProps() {
         return {
             width: 400,
-            height: 100
+            height: 150
         }
+    }
+
+    generateData() {
+        var time = new Date().getTime() / 1000;
+        return Array.apply(null, {length: 100}).map(function(_, i) {
+            return {
+                temp: Math.sin((i + time) / Math.PI) * 30 + 240,
+                timestamp: time + i
+            };
+        });
     }
 
     handleResize(e) {
@@ -45,14 +55,55 @@ export default class TempGraph extends React.Component {
         window.removeEventListener('resize', this.handleResize.bind(this));
     }
 
+    formatTimeLabel(granularity) {
+        var now = new Date();
+        function fract(val){
+            var frac = val % 1;
+            if(frac >= 0.7) {
+                return ".75";
+            }
+            if(frac >= 0.5) {
+                return ".5";
+            }
+            if(frac >= 0.2) {
+                return ".25";
+            }
+            return "";
+        }
+
+        return function(date){
+            var difference = now - date;
+            var seconds = Math.ceil(difference / 1000);
+            var minutes = seconds / 60;
+            var hours = minutes / 60;
+            
+            if(Math.floor(hours) > 0) {
+                return Math.floor(hours) + fract(hours) + " hrs ago";
+            }
+            if(Math.floor(minutes) > 0) {
+                return Math.floor(minutes) + fract(hours) + " min ago";
+            }
+            else return seconds + " s ago";
+        }            
+    }
+
     render() {
         var component = this;
         var data = this.props && this.props.data || [];
  
+        data = data.map(function(item) { 
+            return {
+                timestamp: new Date(item.timestamp * 1000),
+                temp: item.temp
+            }
+        });
+        data = this.generateData();
+
         var pwidth = this.state.parentWidth || this.props.width;
         var pheight = this.props.height;
  
         var container = new ReactFauxDOM.Element('div');
+        container.setAttribute('position', 'relative');
  
         var aSvg = new ReactFauxDOM.Element('svg');
         aSvg.style.setProperty('position', 'relative');
@@ -68,20 +119,31 @@ export default class TempGraph extends React.Component {
  
         var x = d3.scaleLinear().range([0, width]),
             y = d3.scaleLinear().range([height, 0]);
- 
+        
         var line = d3.line()
             .curve(d3.curveBasis)
             .x(function(d) {  return x(d.timestamp);  })
             .y(function(d) {  return y(d.temp);  });
  
         x.domain(d3.extent(data, function(d) { return d.timestamp; }));
-        y.domain([0, 400]);
+        y.domain([50, 350]);
  
-        g.append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x));
- 
+        // var xAxis = d3.svg.axis()
+        //     .scale(x)
+        //     .orient("bottom");
+            
+        // g.append("g")
+        //     .attr("class", "x axis")
+        //     .attr("transform", "translate(0," + height + ")")
+        //     .call(d3.axisBottom(x));
+            // .ticks(d3.timeDay, 1)
+            // .tickFormat(d3.timeFormat("%a %d"));
+
+        // g.append("g")
+        //     .attr("class", "x axis")
+        //     .attr("transform", "translate(0," + height + ")")
+        //     .call(xAxis);
+
         g.append("g")
             .attr("class", "y axis")
             .call(d3.axisLeft(y))
@@ -91,7 +153,7 @@ export default class TempGraph extends React.Component {
             //.attr("dy", "0.71em")
             .attr("fill", "#000")
             .text("ºF");
-       
+
         svg.append("path")
             .datum(data)
             .attr("class", "line")
@@ -100,6 +162,7 @@ export default class TempGraph extends React.Component {
         if(this.state.tip && this.state.tip.on) {
             var tooltip = new ReactFauxDOM.Element('div');
             tooltip.setAttribute('class', 'tempGraphTooltip');
+            tooltip.style.setProperty('position', 'absolute');
             tooltip.style.setProperty('opacity','0');
  
             container.appendChild(tooltip);
@@ -118,10 +181,10 @@ export default class TempGraph extends React.Component {
             .append("circle")
             .style('fill', 'none')
             .style('stroke', 'none')
-            .style('pointer-events', 'all')                                                           
-            .attr("r", 5)                             
-            .attr("cx", function(d) { return x(d.timestamp); })                             
-            .attr("cy", function(d) { return y(d.temp); })                           
+            .style('pointer-events', 'all')
+            .attr("r", 5)
+            .attr("cx", function(d) { return x(d.timestamp); })
+            .attr("cy", function(d) { return y(d.temp); })
             .on("mouseover", function(d) {
                 var tip = {
                     on: true,
