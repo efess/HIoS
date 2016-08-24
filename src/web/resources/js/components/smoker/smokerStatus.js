@@ -63,7 +63,7 @@ export default class SmokerStatus extends React.Component {
             that.loadCurrentState.call(that);
             setTimeout(function(){
                 refresh();
-            }, 1000)
+            }, 5000)
         }());
     }
 
@@ -92,17 +92,26 @@ export default class SmokerStatus extends React.Component {
                 arr.push(id);
             }
             return arr;
-        }, []);            
+        }, []);
+
+        var probeState = probeDetails.map(function(detail, id) { 
+            return {
+                temp: detail.current.temp
+            }
+        });
 
         var that = this;
         return <div>
-            <TopStuff granularity={this.state.granularity} onGranularityChange={this.granularityChange.bind(this)}/>
-
+            <TopStuff 
+                granularity={this.state.granularity}
+                probes={probeState}
+                onGranularityChange={this.granularityChange.bind(this)}/>
             {
                 sessions.map(function(session, i){
                     return <BbqTempRow 
                         name={session.name}
                         target={session.target} 
+                        start={session.start} 
                         probeId={session.probeId}
                         current={probeDetails[session.probeId].current}
                         history={probeDetails[session.probeId].history}

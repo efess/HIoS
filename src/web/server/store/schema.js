@@ -8,8 +8,9 @@ var Promise = require('promise');
 // db changelog:
 // 0 - initial prototype
 // 2 - Changed smoker tables structure to work with multiple probes
+// 3 - Increase timestamp columns to BIGINT
     
-var latestVersion = 2;
+var latestVersion = 3;
 var sqlList = [];
 
 function addSql(sql, version){
@@ -35,6 +36,7 @@ function getCurrentVersion(){
 
 function setLatestVersion(){
     return db.query("INSERT INTO upgrade_history (version, upgrade_date) VALUES (?, ?)", [latestVersion, new Date()])
+    console.log("upgraded db to version " + latestVersion);
 }
 
 function getUpgradeSqls(currentVersion){
@@ -85,7 +87,7 @@ function getUpgradeSqls(currentVersion){
             ');');
             
         upgradeSqls.push('CREATE INDEX idx_smokes_events_timestamp ON smokes_events(' +
-            'timestamp  ASC' +
+            'timestamp ASC' +
             ');');
     }
 
@@ -104,6 +106,13 @@ function getUpgradeSqls(currentVersion){
         upgradeSqls.push('ALTER TABLE smokes_session CHANGE meat name varchar(20);');
 
         upgradeSqls.push('ALTER TABLE smokes CHANGE meatTarget fanPulse INTEGER;');
+    }
+
+    if(currentVersion <= 2) {
+        // integer isn't large enough for time..'
+        upgradeSqls.push('ALTER TABLE smokes_events MODIFY timestamp BIGINT;');
+        upgradeSqls.push('ALTER TABLE smokes_session MODIFY start BIGINT;');
+        upgradeSqls.push('ALTER TABLE smokes_session MODIFY end BIGINT;');
     }
     
     return upgradeSqls;   

@@ -18,7 +18,8 @@ var smokes = {
     },
     // get latest event
     getEvent: function(deviceId) {
-        return db.query("SELECT * FROM smokes_events WHERE deviceId = ? ORDER BY timestamp DESC LIMIT 1", [deviceId]).then(R.head);
+        var timeout = (new Date().getTime() / 1000) - 60;
+        return db.query("SELECT * FROM smokes_events WHERE deviceId = ? AND timestamp >  ? ORDER BY timestamp DESC LIMIT 1", [deviceId, timeout]).then(R.head);
     },
     setSmokerOptions: function(tokens) {
         return db.query("UPDATE smokes SET smokerTarget = ?, fanPulse = ? WHERE deviceId = ?", tokens).then(R.head);

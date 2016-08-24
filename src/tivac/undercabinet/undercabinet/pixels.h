@@ -9,7 +9,7 @@
 #define PIXELS_H_
 #include <stdint.h>
 
-#define LED_COUNT 17
+#define LED_COUNT 231
 #define LED_BYTE_COUNT LED_COUNT * 3
 
 typedef struct {

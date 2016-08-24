@@ -26,12 +26,13 @@ export default class TempGraph extends React.Component {
         }
     }
 
-    generateData() {
-        var time = new Date().getTime() / 1000;
+    generateData(granularity) {
+        var time = new Date().getTime() / 1000 - (granularity * 100);
         return Array.apply(null, {length: 100}).map(function(_, i) {
+            var timestamp = time + (i * granularity);
             return {
-                temp: Math.sin((i + time) / Math.PI) * 30 + 240,
-                timestamp: time + i
+                temp: Math.sin(timestamp / Math.PI) * 30 + 240,
+                timestamp: timestamp
             };
         });
     }
@@ -89,15 +90,21 @@ export default class TempGraph extends React.Component {
 
     render() {
         var component = this;
-        var data = this.props && this.props.data || [];
- 
-        data = data.map(function(item) { 
+        var data = this.props && this.props.history && this.props.history.data  || [];
+        var granularity = parseInt(this.props && this.props.history && this.props.history.gran || 0);
+
+        data = data.map(function(d) {
             return {
-                timestamp: new Date(item.timestamp * 1000),
-                temp: item.temp
-            }
+                timestamp: d.timestamp * 1000,
+                temp: d.temp
+            };
         });
-        data = this.generateData();
+
+        // data = this.generateData(granularity);
+        var yValues = [];
+        for(var i = 0; i <= 350; i+= 50) {
+            yValues.push(i);
+        }
 
         var pwidth = this.state.parentWidth || this.props.width;
         var pheight = this.props.height;
@@ -111,52 +118,42 @@ export default class TempGraph extends React.Component {
         aSvg.setAttribute('height', pheight + 'px');
  
         var svg = d3.select(aSvg),
-            margin = {top: 5, right: 5, bottom: 15, left: 5},
+            margin = {top: 5, right: 5, bottom: 20, left: 35},
             width = pwidth - margin.left - margin.right,
             height = pheight - margin.top - margin.bottom,
             g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
- 
  
         var x = d3.scaleLinear().range([0, width]),
             y = d3.scaleLinear().range([height, 0]);
         
         var line = d3.line()
-            .curve(d3.curveBasis)
+            .curve(d3.curveMonotoneX)
             .x(function(d) {  return x(d.timestamp);  })
             .y(function(d) {  return y(d.temp);  });
  
         x.domain(d3.extent(data, function(d) { return d.timestamp; }));
-        y.domain([50, 350]);
- 
-        // var xAxis = d3.svg.axis()
-        //     .scale(x)
-        //     .orient("bottom");
+        y.domain([0, 350]);
             
-        // g.append("g")
-        //     .attr("class", "x axis")
-        //     .attr("transform", "translate(0," + height + ")")
-        //     .call(d3.axisBottom(x));
-            // .ticks(d3.timeDay, 1)
-            // .tickFormat(d3.timeFormat("%a %d"));
-
-        // g.append("g")
-        //     .attr("class", "x axis")
-        //     .attr("transform", "translate(0," + height + ")")
-        //     .call(xAxis);
+        g.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x)
+                .tickFormat(d3.timeFormat("%I:%M:%S")));
 
         g.append("g")
             .attr("class", "y axis")
-            .call(d3.axisLeft(y))
+            .call(d3.axisLeft(y).tickValues(yValues))
             .append("text")
-            .attr("transform", "rotate(-90)")
-            //.attr("y", 6)
-            //.attr("dy", "0.71em")
+            .attr("x", 15)
+            .attr("y", 6)
+            .attr("dy", "0.71em")
             .attr("fill", "#000")
             .text("ºF");
 
         svg.append("path")
             .datum(data)
             .attr("class", "line")
+            .attr("transform", "translate(" + margin.left + ",0)")
             .attr("d", line);
  
         if(this.state.tip && this.state.tip.on) {

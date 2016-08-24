@@ -64,7 +64,7 @@ router.post('/closeSession', function(req, res) {
     var probeId = req.body.probeId || 0;
 
     var tokens = [
-        req.body.end ? new Date() : 0,
+        req.body.end || new Date().getTime(),
         req.body.description || '',
         deviceId,
         probeId
@@ -89,7 +89,7 @@ router.post('/newSession', function(req, res) {
     }
     var tokens = [
         req.body.deviceId || _testDeviceId,
-        new Date(),
+        new Date().getTime(),
         0,
         req.body.meat || 'Some meat',
         req.body.target || 0,
@@ -156,39 +156,65 @@ router.post('/getSessions', function(req, res) {
 
 router.post('/getSmokerStatus', function(req, res){
     var deviceId = req.body.deviceId || _testDeviceId;
+    var recordLimit = parseInt(req.body.limit || 100);
+    var gran = parseInt(req.body.gran || 3600);
 
-    var fromTime = 0;
-    var toTime = 9443881643;
+    var now = (new Date().getTime() / 1000);
+    
+    var fromTime = (now - (now % gran))  - (100 * gran);
+    var toTime = now;
     var response = {
-        probeDetail: _probeArray.map(function(id){ return {history: {}, current: {} }; })
+        probeDetail: _probeArray.map(function(id){ return {history: { data:[], gran: gran}, current: {} }; })
     };
 
     var tokens = [
         deviceId,
         fromTime, // seconds since epoch...
         toTime,
-        req.body.gran || 3600,
+        gran,
         req.body.limit || 100,
     ];
-    
+        
     Promise.all([
         smokes.getSmokerOptions()
             .then(function(data){ response.options = data; }),
         smokes.getEvents(tokens).then(function(data){
-            _probeArray.forEach(function(probeId) {
-                var strProbeId = 'probe' + probeId;
-                response.probeDetail[probeId].history = 
-                    data.map(function(hist){
-                        return {
-                            timestamp: hist.timestamp,
-                            temp: hist[strProbeId],
-                            target: hist[strProbeId + 'Target']
-                        };
-                    });
-            })
-            response.probeDetail.history = _probeArray.reduce(function(arr, probeId){
-                
-            },[])
+            var timeMap = data.reduce(function(arr, hist) {
+                arr[hist.timestamp] = hist;
+                return arr;
+            }, {});
+            var probes = response.probeDetail;
+
+            for(var i = 0; i < recordLimit; i++){
+                var exp = fromTime + (i * gran);
+                var hist = timeMap[exp];
+                if(!hist){
+                    probes[0].history.data.push({timestamp: exp, temp: 0, target: 0});
+                    probes[1].history.data.push({timestamp: exp, temp: 0, target: 0});
+                    probes[2].history.data.push({timestamp: exp, temp: 0, target: 0});
+                    probes[3].history.data.push({timestamp: exp, temp: 0, target: 0});
+                } else {
+                    probes[0].history.data.push({timestamp: hist.timestamp,temp: hist.probe0,target: hist.probe0Target});
+                    probes[1].history.data.push({timestamp: hist.timestamp,temp: hist.probe1,target: hist.probe1Target})
+                    probes[2].history.data.push({timestamp: hist.timestamp,temp: hist.probe2,target: hist.probe2Target})
+                    probes[3].history.data.push({timestamp: hist.timestamp,temp: hist.probe3,target: hist.probe3Target})
+                }
+
+            }
+
+            // _probeArray.forEach(function(probeId) {
+            //     var strProbeId = 'probe' + probeId;
+
+            //     response.probeDetail[probeId].history = {
+            //         data: data.map(function(hist){
+            //             return {
+            //                 timestamp: hist.timestamp,
+            //                 temp: hist[strProbeId],
+            //                 target: hist[strProbeId + 'Target']
+            //             };
+            //         })
+            //     };
+            // });
         }),
         smokes.getExistingSessions(deviceId, new Date()).then(function(data){
             if(!R.any(R.propEq('probeId', 0), data)) {
@@ -221,13 +247,14 @@ router.post('/getSmokerStatus', function(req, res){
         smokes.getEvent(deviceId).then(function(data){ 
              _probeArray.forEach(function(probeId) {
                 var strProbeId = 'probe' + probeId;
-                response.probeDetail[probeId].current = {
-                    timestamp: data.timestamp,
+                
+                response.probeDetail[probeId].current = data && {
+                    timestamp: data && data.timestamp,
                     temp: data[strProbeId],
                     target: data[strProbeId + 'Target'],
                     fanstate: data.fanstate
-                };
-            })
+                } || {};
+            });
         })
     ]).then(function _success(){
         res.send(JSON.stringify(response));

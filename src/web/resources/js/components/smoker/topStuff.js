@@ -30,10 +30,33 @@ export default class TopStuff extends React.Component {
         this.props.onGranularityChange(value);
     }
 
+        //  Probes
+        //             {
+        //                 this.props.probes.map(function(probe, id) {
+        //                     return <span>{id} - {probe.temp || '---'}</span>
+        //                 })
+        //             }
     render() {
+        var probes = this.props.probes;
+        var probeIds = [0,1,2,3];
+        var style = {
+            tdTemps: {
+                width: '80px',
+                font: "tahoma",
+                fontSize: '1rem',
+                color: '#777777',
+                fontWeight: '700'
+            },
+            tdId: {
+                font: "tahoma",
+                fontSize: '.8rem',
+                color: '#777777',
+                fontWeight: '700'
+            }
+        }
         return <Paper zDepth={1} rounded={false}>
             <div className="row">
-                <div className="col-xs-12">
+                <div className="col-xs-8">
                     <SelectField
                         value={this.props.granularity}
                         onChange={this.handleGranularityChange.bind(this)}
@@ -42,6 +65,26 @@ export default class TopStuff extends React.Component {
                         >
                         {granularityOptions}
                         </SelectField>
+                </div>
+                <div className="col-xs-4">
+                    <table>
+                        <tbody>
+                            <tr>
+                            {
+                                probeIds.map(function(idx){
+                                    return  <td style={style.tdId}>{idx}</td>
+                                })
+                            }
+                            </tr>
+                            <tr>
+                            {
+                                probeIds.map(function(idx){
+                                    return  <td style={style.tdTemps}>{probes[idx] && probes[idx].temp || '---'}  </td>
+                                })
+                            }
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
             </div>
