@@ -9,13 +9,6 @@ var express = require('express'),
 
 var mqttHost = 'pihub.home.lan';
 
-var strToArrayBuffer = function(arrayBuffer, offset, str, length) {
-    var uint8view = new Uint8Array(arrayBuffer);
-    for (var i=0; i < length && i < str.length; i++) {
-        uint8view[i + offset] = str.charCodeAt(i);
-    }
-}
-
 var client = mqtt.createClient(1880, mqttHost);
 client.on('connect', function(){
     console.log('mqtt connected');
@@ -25,8 +18,8 @@ client.on('connect', function(){
 client.on('message', function(topic, data){
     if(topic === "/home/outside/smoker/stoker/state") {
         var deviceIdStr = '11e6f399-dcb7-4651-a585-34e2059163e5';
-        
         console.log(data);
+
         var smokerUpdate = JSON.parse(data);
         var deviceId = uuid.unparse(new Buffer(deviceIdStr));
         checkDevice(deviceId).then(function(){
@@ -49,65 +42,14 @@ client.on('message', function(topic, data){
                     smokerUpdate.fanState
                 ];
                 smokes.addEvent(tokens)
-                    .then(function(){
-                        res.send(returnBody);
-                    }, function(){
-                        console.log('ERROR');
+                    .then(function(){ }, function(err){
+                        console.log('ERROR ' + err);
                     });
             }, function _failed(err){
-                console.log('ERROR');
+                console.log('ERROR ' + err);
             });
     }
 });
-
-router.post('/changeOptions', function(req, res) {
-
-    // var options = req.body.options || {};
-    // var color = req.body.color || options.occupied.color;
-    // var occupiedOpts = options.occupied;
-    // var unoccupiedOpts = options.unoccupied;
-    
-    //validation?
-    var buffer = new ArrayBuffer(64);
-    var uint8view = new Uint8Array(buffer);
-    var uint16view = new Uint16Array(buffer);
-    
-    var byteCounter = 0;
-    strToArrayBuffer(buffer, byteCounter,"123456789012345", 16);
-    byteCounter += 16;   
-    uint16view[byteCounter/2] = 340;
-    byteCounter += 2;
-    uint8view[byteCounter++] = 1;
-    uint8view[byteCounter++] = 1;
-
-    strToArrayBuffer(buffer, byteCounter,"543210987654321", 16);
-    byteCounter += 16;   
-    uint16view[byteCounter/2] = 98;
-    byteCounter += 2;
-    uint8view[byteCounter++] = 3;
-    uint8view[byteCounter++] = 1;
-
-    strToArrayBuffer(buffer, byteCounter,"123456789012345", 16);
-    byteCounter += 16;   
-    uint16view[byteCounter/2] = 117;
-    byteCounter += 2;
-    uint8view[byteCounter++] = 2;
-    uint8view[byteCounter++] = 1;
-
-    // Grill Target
-    uint16view[byteCounter/2] = 230;
-    byteCounter += 2;
-
-    // Fan Pulse
-    uint8view[byteCounter++] = 8;
-
-    var base64Str = base64.fromByteArray(uint8view.subarray(0, byteCounter));
-    
-    client.publish('/home/outside/smoker/stoker/config/update', base64Str);
-    
-    res.send('SUCCESS published ' + base64Str.length + ' long: ' + base64Str);
-});
-
 
 function padLeft(totalLength, padChar, str){
     var realStr = str + "";

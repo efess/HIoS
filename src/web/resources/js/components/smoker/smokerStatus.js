@@ -19,10 +19,10 @@ export default class SmokerStatus extends React.Component {
 
     get mixins() { return [TimerMixin]; }
 
-    loadCurrentState()  {
+    loadCurrentState(gran)  {
         var that = this;
         return ajax.post('smokes/getSmokerStatus', {
-            gran: this.state.granularity,
+            gran: gran || this.state.granularity,
             deviceId: '31316536-6633-3939-2d64-6362372d3436'
         })
             .then(function(data) {
@@ -34,25 +34,30 @@ export default class SmokerStatus extends React.Component {
 
     granularityChange(granularity) {
         this.setState({granularity: granularity});
+        this.loadCurrentState(granularity);
     }
 
     newProbe(probe) {
         return ajax.post('smokes/newSession', probe)
-            .then(this.loadSessions, function _fail(err) {
+            .then(this.loadCurrentState.bind(this), function _fail(err) {
                 console.log('failed creating sessions: ' + err);
             });
     }
 
     closeSession(session) {
         return ajax.post('smokes/closeSession', session)
-            .then(this.loadSessions, function _fail(err) {
+            .then(this.loadCurrentState.bind(this), function _fail(err) {
                 console.log('failed closing session: ' + err);
             });
     }
 
     updateTarget(probeId, target) {
-        return ajax.post('smokes/updateProbeTarget', probe)
-            .then(this.loadSessions, function _fail(err) {
+        return ajax.post('smokes/updateProbeTarget', {
+                probeId: probeId,
+                deviceId: '31316536-6633-3939-2d64-6362372d3436',
+                target: target
+            })
+            .then(this.loadCurrentState.bind(this), function _fail(err) {
                 console.log('failed updating target: ' + err);
             });
     }
@@ -116,6 +121,7 @@ export default class SmokerStatus extends React.Component {
                         current={probeDetails[session.probeId].current}
                         history={probeDetails[session.probeId].history}
                         closeSession={that.closeSession.bind(that)}
+                        targetChange={that.updateTarget.bind(that)}
                         key={i} />;
                 })
             }

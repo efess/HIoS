@@ -138,7 +138,8 @@ export default class TempGraph extends React.Component {
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")")
             .call(d3.axisBottom(x)
-                .tickFormat(d3.timeFormat("%I:%M:%S")));
+                .ticks(width / 60)
+                .tickFormat(d3.timeFormat("%-I:%M:%S")));
 
         g.append("g")
             .attr("class", "y axis")

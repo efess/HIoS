@@ -56,7 +56,7 @@ export default class TopStuff extends React.Component {
         }
         return <Paper zDepth={1} rounded={false}>
             <div className="row">
-                <div className="col-xs-8">
+                <div className="col-md-8 col-md-6 hidden-sm-down">
                     <SelectField
                         value={this.props.granularity}
                         onChange={this.handleGranularityChange.bind(this)}
@@ -66,7 +66,7 @@ export default class TopStuff extends React.Component {
                         {granularityOptions}
                         </SelectField>
                 </div>
-                <div className="col-xs-4">
+                <div className="col-md-4 col-sm-12">
                     <table>
                         <tbody>
                             <tr>

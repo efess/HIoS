@@ -3,37 +3,87 @@ var express = require('express'),
     smokes = require('../model/smokes'),
     router = express.Router(),
     R = require('ramda'),
-    uuid = require('node-uuid');
+    mqtt = require('mqtt'),
+    uuid = require('node-uuid'),
+    base64 = require('base64-js');
 
+var mqttHost = 'pihub.home.lan';
 var _probeArray = [0,1,2,3];
 var _testDeviceId = '31316536-6633-3939-2d64-6362372d3436';
-    
-router.get('/', function(req, res) {
-    res.render('smoker', { 
-        title: 'Home HIoS - Smoker Stoker'});
-});
 
-router.post('/changeTargets', function(req,res) {
-    var meatTarget = parseInt(req.body.meatTarget) || 0;
-    if(meatTarget < 50 || meatTarget > 1000) {
-        meatTarget = 0;
+var strToArrayBuffer = function(arrayBuffer, offset, str, length) {
+    var uint8view = new Uint8Array(arrayBuffer);
+    for (var i=0; i < length && i < str.length; i++) {
+        uint8view[i + offset] = str.charCodeAt(i);
     }
-    var grillTarget = parseInt(req.body.grillTarget) || 0;
-    if(grillTarget < 50 || grillTarget > 1000) {
-        grillTarget = 0;
+}
+
+function sendDeviceUpdate(config) {
+    var buffer = new ArrayBuffer(64);
+    var uint8view = new Uint8Array(buffer);
+    var uint16view = new Uint16Array(buffer);
+
+    var grillTarget = 0;
+    var byteCounter = 0;
+
+    var probes = config.probes;
+    var grillProbe = R.find(R.propEq('probeId', 0))(probes);
+    grillTarget = grillProbe && grillProbe.target || 0;
+
+    function setProbeProps(probeId, name, enabled, target) {
+        strToArrayBuffer(buffer, byteCounter,name, 16);
+        byteCounter += 16;   
+        uint16view[byteCounter/2] = target;
+        byteCounter += 2;
+        uint8view[byteCounter++] = probeId;
+        uint8view[byteCounter++] = enabled;
     }
-    var tokens = [
-        grillTarget,
-        meatTarget,
-        req.body.deviceId || _testDeviceId
-    ];
+
+    for(var i = 1; i < 4; i++) {
+        var probe = R.find(R.propEq('probeId', i))(probes);
+        if(!probe){
+            setProbeProps(i, "", 0, 0);
+        } else {
+            setProbeProps(i, probe.name, 1, probe.target);
+        }
+    }
+
+    // Grill Target
+    uint16view[byteCounter/2] = grillTarget;
+    byteCounter += 2;
+
+    // Fan Pulse
+    uint8view[byteCounter++] = config.options.fanPulse;
+
+    var base64Str = base64.fromByteArray(uint8view.subarray(0, byteCounter));
     
-    smokes.setTargets(tokens)
-        .then(function _success(){
-            res.send("SUCCESS");
-        }, function _fail(err) {
-            res.send('Error: ' + err);
-        });
+    var client = mqtt.createClient(1880, mqttHost);
+    client.publish('/home/outside/smoker/stoker/config/update', base64Str);
+    
+    res.send('SUCCESS published ' + base64Str.length + ' long: ' + base64Str);
+}
+
+function getDeviceConfig(deviceId) {
+    var config = {};
+    return Promise.all([
+        smokes.getExistingSessions(deviceId, new Date()).then(function(data){
+            config.probes = data;
+        }),
+        smokes.getSmokerOptions(deviceId).then(function(data){ 
+            config.options = data;
+        })
+    ]).then(function() {
+        return config;
+    });        
+}
+
+function handleProbeUpdate(deviceId){
+    return getDeviceConfig(deviceId)
+        .then(sendDeviceUpdate);
+}
+ 
+router.get('/', function(req, res) {
+    res.render('smoker', { title: 'Home HIoS - Smoker Stoker'});
 });
 
 router.post('/updateProbeTarget', function(req, res) {
@@ -50,9 +100,10 @@ router.post('/updateProbeTarget', function(req, res) {
         target = 0;
     }
 
-    smokes.updateProbeTarget(deviceId, req.body.probeId, target)
+    smokes.updateProbeTarget(deviceId, probeId, target)
         .then(function _success(){
-            res.send("SUCCESS");
+            handleProbeUpdate(deviceId);
+            res.send({status:"SUCCESS"});
         }, function _fail(err) {
             res.send('Error: ' + err);
         });
@@ -72,7 +123,8 @@ router.post('/closeSession', function(req, res) {
     
     smokes.closeSession(tokens)
         .then(function _success(){
-            res.send("SUCCESS");
+            handleProbeUpdate(deviceId);
+            res.send({status:"SUCCESS"});
         }, function _fail(err) {
             res.send('Error: ' + err);
         });
@@ -87,8 +139,9 @@ router.post('/newSession', function(req, res) {
         res.send('Cannot add session for probeId 0');
         return;
     }
+    var deviceId = req.body.deviceId || _testDeviceId;
     var tokens = [
-        req.body.deviceId || _testDeviceId,
+        deviceId,
         new Date().getTime(),
         0,
         req.body.meat || 'Some meat',
@@ -100,7 +153,8 @@ router.post('/newSession', function(req, res) {
     
     smokes.createSession(tokens)
         .then(function _success(){
-            res.send("SUCCESS");
+            handleProbeUpdate(deviceId);
+            res.send({status:"SUCCESS"});
         }, function _fail(err) {
             res.send('Error: ' + err);
         });
@@ -201,20 +255,6 @@ router.post('/getSmokerStatus', function(req, res){
                 }
 
             }
-
-            // _probeArray.forEach(function(probeId) {
-            //     var strProbeId = 'probe' + probeId;
-
-            //     response.probeDetail[probeId].history = {
-            //         data: data.map(function(hist){
-            //             return {
-            //                 timestamp: hist.timestamp,
-            //                 temp: hist[strProbeId],
-            //                 target: hist[strProbeId + 'Target']
-            //             };
-            //         })
-            //     };
-            // });
         }),
         smokes.getExistingSessions(deviceId, new Date()).then(function(data){
             if(!R.any(R.propEq('probeId', 0), data)) {
@@ -261,32 +301,6 @@ router.post('/getSmokerStatus', function(req, res){
     }, function _fail(err) {
         res.send('Error: ' + err);
     });
-
-
-    // var fakeData = {
-    //     temps: [
-    //         {   id: 1,
-    //             name: "grill",
-    //             current: 211,
-    //             target: 230,
-    //             graph: [
-    //                 { time: 123456789, temp: 110 },
-    //                 { time: 123456790, temp: 110 },
-    //                 { time: 123456791, temp: 110 },
-    //                 { time: 123456792, temp: 100 },
-    //                 { time: 123456793, temp: 105 },
-    //             ]
-    //         },
-    //         {
-    //             id: 2,
-    //             name: 'Steak',
-    //             current: 190,
-    //             target: 195
-    //         }
-    //     ] 
-    // };
-    
-    //res.json(fakeData);
 });
 
 module.exports = router;

@@ -19,14 +19,9 @@ export default class BbqTempRow extends React.Component {
     }
 
     handleTargetChange(value) {
-        return ajax.post('smokes/updateProbeTarget', {
-                probeId: this.props.probeId,
-                deviceId: '31316536-6633-3939-2d64-6362372d3436',
-                target: value
-            })
-            .then(this.loadSessions, function _fail(err) {
-                console.log('failed updating target: ' + err);
-            });
+        if(this.props.targetChange){
+            this.props.targetChange(this.props.probeId, value);
+        }
     }
 
     componentDidMount() {
@@ -83,19 +78,12 @@ export default class BbqTempRow extends React.Component {
             parseInt(this.props.current.temp)  || '---';
 
         var targetTemp = this.props.target && parseInt(this.props.target) || '---';
-    
-        // Normal look.
-        // return <div style={style.probeContainer} className="row">
-        //     <div className="col-lg-5 hidden-md-down"><TempGraph data={this.props.history || []}/></div>
-        //     <div className="col-lg-3 col-md-6 col-sm-12"><span style={style.probeName}>{this.props.name}</span></div>
-        //     <div className="col-lg-2 col-md-3 col-sm-6 "><span style={style.probeCurrentTemp}>{currentTemp}°</span></div>
-        //     <div className="col-lg-2 col-md-3 col-sm-6"><LabeledValue color='#663300' size='4' value={targetTemp} name="Target" change={this.handleTargetChange.bind(this)}/></div>
-        // </div>;
 
         var sessionOptions;
         if(this.props.probeId > 0) {
             sessionOptions = <SessionOptions onCloseSession={this.props.closeSession.bind(this)} probeId={this.props.probeId}/>;
         }
+
         return <Paper zDepth={1} rounded={false}>
             <div style={style.probeContainer} className="row">
                 <div className="col-md-6 hidden-sm-down">
@@ -107,9 +95,11 @@ export default class BbqTempRow extends React.Component {
                             <div style={style.probeName}>{this.props.name}</div>
                             {sessionOptions}
                         </div>
-                        <div className="col-sm-4" style={style.timeSpent}>{timeStr}</div>
-                        <div className="col-sm-4"><span style={style.probeCurrentTemp}>{currentTemp}°</span></div>
-                        <div className="col-sm-4"><LabeledValue color='#663300' size='3' value={targetTemp} name="Target" change={this.handleTargetChange.bind(this)}/></div>
+                        <div className="col-sm-4 col-xs-6"><span style={style.probeCurrentTemp}>{currentTemp}°</span></div>
+                        <div className="col-sm-4 col-xs-6">
+                            <LabeledValue color='#663300' size='3' value={targetTemp} name="Target" change={this.handleTargetChange.bind(this)}/>
+                        </div>
+                        <div className="col-sm-4 col-xs-12" style={style.timeSpent}>{timeStr}</div>
                     </div>
                 </div>
             </div>
