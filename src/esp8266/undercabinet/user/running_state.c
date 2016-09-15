@@ -45,7 +45,7 @@ uint8_t find_next_value(uint8_t *searchArray, uint8_t **nextStart, uint8_t *char
 void state_handle_outgoing_updates()
 {
     // Arduino emits this byte when starting up or setting up UART
-    if(uart0_read() == 0xE0)
+    if(!current_state->needsConfigSend && uart0_read() == 0xE0)
     {
         // update after 2 seconds
         current_state->update_after_this_time = system_get_time() + (2 * 1000 * 1000);

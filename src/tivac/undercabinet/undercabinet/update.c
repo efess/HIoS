@@ -166,6 +166,7 @@ uint16_t parse_config_room_settings(RoomStateSettings* roomSettings, uint8_t* bu
 	uint32_t* uint32Ptr = (uint32_t*)buffer;
 	uint16_t byteCount = 0;
 	uint8_t i = 0;
+
 	roomSettings->transition = buffer[byteCount++];
 	roomSettings->animation = buffer[byteCount++];
 	roomSettings->brightness = buffer[byteCount++];
@@ -174,9 +175,9 @@ uint16_t parse_config_room_settings(RoomStateSettings* roomSettings, uint8_t* bu
 	roomSettings->color = uint32Ptr[byteCount / 4];
 	byteCount += 4;
 
-	for(i = byteCount / 4; i < 16; i++)
+	for(i = 0; i < 16; i++)
 	{
-		roomSettings->colorPallete[i] = uint32Ptr[i];
+		roomSettings->colorPallete[i] = uint32Ptr[byteCount / 4];
 		byteCount += 4;
 	}
 
