@@ -15,8 +15,16 @@ export default class AddSession extends React.Component {
             addIsOpen: false,
             newProbe: {
                 probeId: 0
-            }
+            },
+            showErrors: false
         };
+    }
+
+    isValid(newProbe) {
+        return newProbe && newProbe.probeId &&
+            newProbe.probeId > 0 &&
+            newProbe.target && newProbe.target > 0 && newProbe.target < 500 &&
+            newProbe.meat;
     }
 
     handleOpen() {
@@ -28,9 +36,13 @@ export default class AddSession extends React.Component {
     }
 
     handleAddAndClose() {
-        this.setState({addIsOpen: false});
-        if(this.props && this.props.onAddProbe) {
-            this.props.onAddProbe(this.state.newProbe);
+        if(this.isValid(this.state.newProbe)) {
+            this.setState({addIsOpen: false});
+            if(this.props && this.props.onAddProbe) {
+                this.props.onAddProbe(this.state.newProbe);
+            }
+        } else {
+            this.setState({showErrors: true});
         }
     }
 
@@ -74,8 +86,11 @@ export default class AddSession extends React.Component {
                 <ContentAdd />
             </FloatingActionButton>;
         }
+
+        var newProbe = this.state.newProbe;
+        var showErrors = this.state.showErrors;
+
         return <div>
-        
             {button}
             
             <Dialog
@@ -89,15 +104,22 @@ export default class AddSession extends React.Component {
                 <TextField
                     hintText="Hint Text"
                     onChange={this.handleChange('meat').bind(this)}
+                    errorText = {showErrors && !newProbe.meat && "Meat is a required field"}
                     floatingLabelText="Meat"/>
                     
                 <TextField
                     hintText="Hint Text"
                     onChange={this.handleChange('target').bind(this)}
+                    errorText = {
+                        showErrors && 
+                        (!newProbe.target || newProbe.target < 50 || newProbe.target > 500) && 
+                        "Valid temperature between 50 and 500"}
                     floatingLabelText="Target Temp"/>
                 
                 <SelectField value={this.state.newProbe.probeId}
                     floatingLabelText="Which probe?"
+                    errorText = {showErrors && newProbe.probeId <= 0  && "Probe selection is required"}
+                    errorStyle={{color: 'red'}}
                     onChange={this.handleProbechange.bind(this)}>
                     {
                         availableProbes.map(function(probeId) {
