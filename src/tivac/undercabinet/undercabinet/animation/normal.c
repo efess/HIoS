@@ -22,18 +22,11 @@ void normal_setup(void *g_state, RoomStateSettings* settings)
 
 void normal_frame(void *g_state, Pixels* pixels)
 {
-	float freqs[16];
-	sound_getFreq(freqs, 16);
-
 	NormalState *state = g_state;
-	uint8_t normalBrightness = 0x66;
-	uint8_t range = 0xff - normalBrightness;
-	uint8_t newBrightness = 0;
 
 	uint16_t i;
 	for(i = 0; i < pixels->pixelCount; i++)
 	{
-		newBrightness = normalBrightness + (uint8_t)fminf(freqs[i] / 1000 * range, range);
-		pixels_setPixelColor(pixels, i, changeBrightness(state->color, newBrightness));//state->brightness));
+		pixels_setPixelColor(pixels, i, changeBrightness(state->color, state->brightness));//state->brightness));
     }
 }

@@ -51,8 +51,8 @@
 	
 	var nav = __webpack_require__(/*! ./app/nav.js */ 1);
 	var smokes = __webpack_require__(/*! ./app/smokes.js */ 400);
-	var undercabinet = __webpack_require__(/*! ./app/undercabinet.js */ 614);
-	var edison = __webpack_require__(/*! ./app/edison.js */ 703);
+	var undercabinet = __webpack_require__(/*! ./app/undercabinet.js */ 467);
+	var edison = __webpack_require__(/*! ./app/edison.js */ 557);
 	
 	module.exports = {};
 
@@ -73907,12 +73907,18 @@
 	            addIsOpen: false,
 	            newProbe: {
 	                probeId: 0
-	            }
+	            },
+	            showErrors: false
 	        };
 	        return _this;
 	    }
 	
 	    _createClass(AddSession, [{
+	        key: 'isValid',
+	        value: function isValid(newProbe) {
+	            return newProbe && newProbe.probeId && newProbe.probeId > 0 && newProbe.target && newProbe.target > 0 && newProbe.target < 500 && newProbe.meat;
+	        }
+	    }, {
 	        key: 'handleOpen',
 	        value: function handleOpen() {
 	            this.setState({ addIsOpen: true });
@@ -73925,9 +73931,13 @@
 	    }, {
 	        key: 'handleAddAndClose',
 	        value: function handleAddAndClose() {
-	            this.setState({ addIsOpen: false });
-	            if (this.props && this.props.onAddProbe) {
-	                this.props.onAddProbe(this.state.newProbe);
+	            if (this.isValid(this.state.newProbe)) {
+	                this.setState({ addIsOpen: false });
+	                if (this.props && this.props.onAddProbe) {
+	                    this.props.onAddProbe(this.state.newProbe);
+	                }
+	            } else {
+	                this.setState({ showErrors: true });
 	            }
 	        }
 	    }, {
@@ -73971,6 +73981,10 @@
 	                    _react2.default.createElement(_add2.default, null)
 	                );
 	            }
+	
+	            var newProbe = this.state.newProbe;
+	            var showErrors = this.state.showErrors;
+	
 	            return _react2.default.createElement(
 	                'div',
 	                null,
@@ -73988,15 +74002,19 @@
 	                    _react2.default.createElement(_TextField2.default, {
 	                        hintText: 'Hint Text',
 	                        onChange: this.handleChange('meat').bind(this),
+	                        errorText: showErrors && !newProbe.meat && "Meat is a required field",
 	                        floatingLabelText: 'Meat' }),
 	                    _react2.default.createElement(_TextField2.default, {
 	                        hintText: 'Hint Text',
 	                        onChange: this.handleChange('target').bind(this),
+	                        errorText: showErrors && (!newProbe.target || newProbe.target < 50 || newProbe.target > 500) && "Valid temperature between 50 and 500",
 	                        floatingLabelText: 'Target Temp' }),
 	                    _react2.default.createElement(
 	                        _SelectField2.default,
 	                        { value: this.state.newProbe.probeId,
 	                            floatingLabelText: 'Which probe?',
+	                            errorText: showErrors && newProbe.probeId <= 0 && "Probe selection is required",
+	                            errorStyle: { color: 'red' },
 	                            onChange: this.handleProbechange.bind(this) },
 	                        availableProbes.map(function (probeId) {
 	                            return _react2.default.createElement(_MenuItem2.default, {
@@ -74119,6 +74137,1596 @@
 
 /***/ },
 /* 467 */
+/*!******************************************!*\
+  !*** ./resources/js/app/undercabinet.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var _fft = __webpack_require__(/*! ./helper/fft */ 468);
+	
+	var _fft2 = _interopRequireDefault(_fft);
+	
+	var _jquery = __webpack_require__(/*! jquery */ 2);
+	
+	var _jquery2 = _interopRequireDefault(_jquery);
+	
+	var _undercabinetLightControl = __webpack_require__(/*! ../components/undercabinetLightControl */ 469);
+	
+	var _undercabinetLightControl2 = _interopRequireDefault(_undercabinetLightControl);
+	
+	var _getMuiTheme = __webpack_require__(/*! material-ui/styles/getMuiTheme */ 228);
+	
+	var _getMuiTheme2 = _interopRequireDefault(_getMuiTheme);
+	
+	var _MuiThemeProvider = __webpack_require__(/*! material-ui/styles/MuiThemeProvider */ 227);
+	
+	var _MuiThemeProvider2 = _interopRequireDefault(_MuiThemeProvider);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var R = __webpack_require__(/*! ramda */ 471);
+	var Promise = __webpack_require__(/*! promise */ 439);
+	//require('./test');
+	var spectrum = __webpack_require__(/*! spectrum */ 556);
+	var ajax = __webpack_require__(/*! ./ajax */ 438);
+	var ReactDOM = __webpack_require__(/*! react-dom */ 35);
+	var React = __webpack_require__(/*! react */ 3);
+	//var Chart = require('chart');
+	var spectrum = __webpack_require__(/*! spectrum */ 556);
+	//var fft = require('./helper/fft');
+	//var $ = require('jquery');
+	//var UndercabinetLightControl = require('../components/undercabinetLightControl');
+	
+	
+	var presets = {
+	    party: [0x5500AB, 0x84007C, 0xB5004B, 0xE5001B, 0xE81700, 0xB84700, 0xAB7700, 0xABAB00, 0xAB5500, 0xDD2200, 0xF2000E, 0xC2003E, 0x8F0071, 0x5F00A1, 0x2F00D0, 0x0007F9],
+	    christmas: [0xFF0000, 0xFFFFFF, 0x00FF00, 0xFFFFFF, 0xFF0000, 0xFFFFFF, 0x00FF00, 0xFFFFFF, 0xFF0000, 0xFFFFFF, 0x00FF00, 0xFFFFFF, 0xFF0000, 0xFFFFFF, 0x00FF00, 0xFFFFFF],
+	    cute: [0xFFC1A6, 0x62C6AF, 0xE528DC, 0x4E81DC, 0xFFC1A6, 0x62C6AF, 0xE528DC, 0x4E81DC, 0xFFC1A6, 0x62C6AF, 0xE528DC, 0x4E81DC, 0xFFC1A6, 0x62C6AF, 0xE528DC, 0x4E81DC],
+	    dawn: [0xE1B245, 0xE16C2E, 0xECED0C, 0xEC3233, 0xE1B245, 0xE16C2E, 0xECED0C, 0xEC3233, 0xE1B245, 0xE16C2E, 0xECED0C, 0xEC3233, 0xE1B245, 0xE16C2E, 0xECED0C, 0xEC3233],
+	    bluegreen: [0x0000FF, 0x0000FF, 0x0000FF, 0x0000FF, 0xFFFFFF, 0xFFFFFF, 0x0000FF, 0x00FF00, 0x00FF00, 0x0000FF, 0x0000FF, 0xFFFFFF, 0xFFFFFF, 0x0000FF, 0x00FF00, 0x0000FF],
+	    rainbow: [0xFF0000, 0xD52A00, 0xAB5500, 0xAB7F00, 0xABAB00, 0x56D500, 0x00FF00, 0x00D52A, 0x00AB55, 0x0056AA, 0x0000FF, 0x2A00D5, 0x5500AB, 0x7F0081, 0xAB0055, 0xD5002B],
+	    jason: [0x84007C, 0x84007C, 0x84007C, 0x0007F9, 0x0007F9, 0x0007F9, 0x84007C, 0x84007C, 0x84007C, 0x0007F9, 0x0007F9, 0x0007F9, 0x84007C, 0x84007C, 0x0007F9, 0x0007F9]
+	};
+	var last = {
+	    r: 0,
+	    g: 0,
+	    b: 0
+	};
+	var currentPallete = presets.party;
+	
+	var changedPallete = false;
+	var led_array = [];
+	var led_count = 100;
+	var LED_COUNT = led_count;
+	var animationStates = [];
+	var PartyColors_p = [0x5500AB, 0x84007C, 0xB5004B, 0xE5001B, 0xE81700, 0xB84700, 0xAB7700, 0xABAB00, 0xAB5500, 0xDD2200, 0xF2000E, 0xC2003E, 0x8F0071, 0x5F00A1, 0x2F00D0, 0x0007F9];
+	var HeatColors_p = [0x000000, 0x330000, 0x660000, 0x990000, 0xCC0000, 0xFF0000, 0xFF3300, 0xFF6600, 0xFF9900, 0xFFCC00, 0xFFFF00, 0xFFFF33, 0xFFFF66, 0xFFFF99, 0xFFFFCC, 0xFFFFFF];
+	function red(color) {
+	    return color >> 16;
+	}
+	function green(color) {
+	    return color >> 8 & 0xFF;
+	}
+	function blue(color) {
+	    return color & 0xFF;
+	}
+	function combine(r, g, b) {
+	    return r << 16 | g << 8 | b;
+	}
+	function random(min, max) {
+	    if (min && !max && max != 0) {
+	        max = min;
+	        min = 0;
+	    } else {
+	        min = min || 0;
+	        max = max || 0xFF;
+	    }
+	    return Math.floor(Math.random() * (max - min) + min);
+	}
+	function max(a, b, c) {
+	    var m = a;
+	    m < b && (m = b);
+	    m < c && (m = c);
+	    return m;
+	}
+	function setColor(color) {
+	    (0, _jquery2.default)('.pixel').css('background-color', 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')');
+	    last = color;
+	}
+	function blendA(color1, color2, alph) {
+	    var alpha = alph + 1;
+	    var inv_alpha = 256 - alph;
+	
+	    return combine(red(color1) * alpha + inv_alpha * red(color2) >> 8, green(color1) * alpha + inv_alpha * green(color2) >> 8, blue(color1) * alpha + inv_alpha * blue(color2) >> 8);
+	}
+	function scale(value, maxValue) {
+	    return (value || 1) * maxValue >> 8;
+	}
+	function scaleC(color, maxValue) {
+	    // scale
+	    if (maxValue == 0xFF) {
+	        return;
+	    }
+	    return {
+	        r: scale(color.r, maxValue),
+	        g: scale(color.g, maxValue),
+	        b: scale(color.b, maxValue)
+	    };
+	}
+	function changeBrightness(color, newBrightness) {
+	    var maxValue = max(color.r, color.g, color.b) || 1;
+	    return {
+	        r: Math.round(color.r * newBrightness / maxValue),
+	        g: Math.round(color.g * newBrightness / maxValue),
+	        b: Math.round(color.b * newBrightness / maxValue)
+	    };
+	}
+	
+	// var doSoundTest = (function() {
+	//     var isSetup = false;
+	//     var node = null;
+	//     var audioContext = null;
+	//     var lastBuffer = [];
+	//     var getSample = true;
+	//     var chart = null;
+	//     var fqChart = null;
+	//     var fftData = [];
+	//     var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+	//     var gainNode = audioContext.createGain();
+	//     gainNode.gain.value = 5;
+	
+	//     function setGraph() {
+	
+	//         var chartOptions = {
+	//             // Boolean - Whether to animate the chart
+	//             animation: false,
+	//             legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>",
+	//             responsive: false,
+	//             maintainAspectRatio: false,
+	//             pointDot: false,
+	//             scaleLabel: " ",
+	//             scaleShowVerticalLines: false,
+	//             scaleBeginAtZero: true,
+	
+	
+	//             // Boolean - Determines whether to draw tooltips on the canvas or not
+	//             showTooltips: false,
+	//             // Boolean - If we want to override with a hard coded scale
+	//             scaleOverride: true,
+	
+	//             // ** Required if scaleOverride is true **
+	//             // Number - The number of steps in a hard coded scale
+	//             scaleSteps: 32,
+	//             // Number - The value jump in the hard coded scale
+	//             scaleStepWidth: 8,
+	//             // Number - The scale 
+	//             scaleStartValue: 0
+	//         };
+	//         var chartDataset = {
+	//             label: "Meat",
+	//             fillColor: "rgba(178,141,91,0.2)",
+	//             pointColor: "rgba(178,141,91,1)",
+	//             pointStrokeColor: "#fff",
+	//             pointHighlightFill: "#fff",
+	//             pointHighlightStroke: "rgba(178,141,91,1)",
+	//             data: lastBuffer
+	//         };
+	//         var chartData = {
+	//             datasets: [chartDataset],
+	//             labels: R.map(function(){return '';}, new Array(1024))
+	//         };
+	//         if(!chart) {
+	//             var ctx = document.getElementById('sound-data-graph').getContext("2d");
+	//             var chart = new Chart(ctx).Line(chartData, chartOptions);
+	//         } else {
+	//             chart.initialize(chartData);
+	//         } 
+	
+	//         // bar chart
+	//         chartOptions = {
+	//             animation: false,
+	//             //Number - Pixel width of the bar stroke
+	//             barStrokeWidth : 1,
+	
+	//             //Number - Spacing between each of the X value sets
+	//             barValueSpacing : 1,
+	
+	//             //Number - Spacing between data sets within X values
+	//             barDatasetSpacing : 1,
+	
+	//             // Boolean - whether to maintain the starting aspect ratio or not when responsive, if set to false, will take up entire container
+	//             maintainAspectRatio: true,
+	//             responsive: false,
+	//             // Boolean - Determines whether to draw tooltips on the canvas or not
+	//             showTooltips: false,
+	//             // Boolean - If we want to override with a hard coded scale
+	//             scaleOverride: true,
+	
+	//             // ** Required if scaleOverride is true **
+	//             // Number - The number of steps in a hard coded scale
+	//             scaleSteps: 5,
+	//             // Number - The value jump in the hard coded scale
+	//             scaleStepWidth: 1000,
+	//             // Number - The scale 
+	//             scaleStartValue: 0
+	//         }; 
+	//         var data = fftData.splice(0, 512);
+	//         chartData = {
+	//             datasets: [{ 
+	//                 label: "My First dataset",
+	//                 fillColor: "rgba(220,220,220,0.5)",
+	//                 strokeColor: "rgba(220,220,220,0.8)",
+	//                 highlightFill: "rgba(220,220,220,0.75)",
+	//                 highlightStroke: "rgba(220,220,220,1)",
+	//                 data: data
+	//             }],
+	//             labels: R.map(function(){return '';}, data)
+	//         };
+	//         if(!fqChart) {
+	//             var ctx = document.getElementById('freq-data-graph').getContext("2d");
+	//             var fqChart = new Chart(ctx).Bar(chartData, chartOptions);
+	//         } else {
+	//             fqChart.initialize(chartData);
+	//         }
+	//     }
+	
+	//     function setup() {
+	//         if(isSetup){
+	//             return;
+	//         }
+	//         isSetup = true;
+	//         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+	//         navigator.getUserMedia(
+	//             { audio: true }, 
+	//             function(stream) {
+	//                 var source = audioContext.createMediaStreamSource(stream);
+	//                 node = audioContext.createScriptProcessor(1024, 1, 1);
+	//                 node.onaudioprocess = (e) => {
+	//                     if (!getSample) { return; }
+	
+	//                     var thisBuffer = e.inputBuffer.getChannelData(0);
+	
+	//                     //normalize to 8 bit
+	//                     for(var i = 0; i < 1024; i++) { 
+	//                         lastBuffer[i] = Math.floor((thisBuffer[i] + 1) * 128);
+	//                     }
+	
+	//                     getSample = false
+	//                 }; 
+	
+	//                 // source -> gain -> output buffer
+	
+	//                 source.connect(gainNode);
+	//                 gainNode.connect(node);
+	//                 node.connect(audioContext.destination); 
+	
+	//             }, 
+	//             function(){/*lol*/}
+	//         );
+	//     } 
+	//     function newObj() {
+	//         return {re:0, im:0};
+	//     }
+	//     function makeRec(len) {
+	//         var arr = [];
+	//         for(var i = 0; i < len; i++) {
+	//             arr[i] = {re: 0, im: 0};
+	//         }
+	//         return arr;
+	//     };
+	
+	//     return function() { 
+	//         //
+	//         var test = [1,1,1,1,0,0,0,0];
+	
+	//         var result = test.slice();
+	
+	//         fft.cfft(result);
+	
+	//         return;
+	//         //
+	//         setup(); 
+	//         getSample = true;
+	//         setTimeout(function() { 
+	//             var fftResult = lastBuffer.slice();
+	//             //fftResult = fft.realFft(lastBuffer, 0, 1024, 1, makeRec(1024));
+	//             fft.cfft(fftResult);
+	//             fftData = R.map(
+	//                 function(fact){  
+	//                     return Math.sqrt(Math.pow(fact.re, 2) + Math.pow(fact.im, 2));
+	//                 }, 
+	//                 fftResult); 
+	
+	//             setGraph();
+	//             doSoundTest(); 
+	//         }, 120);  
+	//     } 
+	// }());
+	
+	var undercabinet = {
+	    hookupEvents: function hookupEvents() {
+	
+	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).on('change', undercabinet.changeColor);
+	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).on('change', undercabinet.changeColor);
+	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).on('change', undercabinet.changeColor);
+	        (0, _jquery2.default)('.do-animate').on('click', undercabinet.animate);
+	        (0, _jquery2.default)('.send-color').on('click', undercabinet.sendToDevice);
+	
+	        var simulation = (0, _jquery2.default)('.led-simulation');
+	        for (var i = 0; i < led_count; i++) {
+	            var newPixel = document.createElement('div');
+	            newPixel.className = 'pixel';
+	            newPixel.id = "pix-" + i;
+	            simulation.append(newPixel);
+	        }
+	        var presetLists = (0, _jquery2.default)('.pallete-preset');
+	        for (var key in presets) {
+	            presetLists.append('<option value="' + key + '">' + key + '</option>');
+	        }
+	        var selectList = (0, _jquery2.default)('.animation-list');
+	        selectList.append('<option value="6">Fire</option>');
+	        selectList.append('<option value="0">None</option>');
+	        selectList.append('<option value="1">Smooth Color motion</option>');
+	        selectList.append('<option value="2">Twinkle</option>');
+	        selectList.append('<option value="3">Rainbow</option>');
+	        selectList.append('<option value="4">Runner</option>');
+	        selectList.append('<option value="5">Discrete</option>');
+	        selectList.append('<option value="6">Fire</option>');
+	        selectList.append('<option value="7">Frequency</option>');
+	
+	        (0, _jquery2.default)('#testOne').append('<paper-item>Testing</paper-item>');
+	
+	        var transitionLists = (0, _jquery2.default)('.transition-list');
+	
+	        transitionLists.append('<option value="0">None</option>');
+	        transitionLists.append('<option value="1">Fade</option>');
+	        transitionLists.append('<option value="2">Pixelate</option>');
+	        (0, _jquery2.default)('.pallete-preset', (0, _jquery2.default)('.animation-testing')).on('change', function (e) {
+	            currentPallete = presets[(0, _jquery2.default)(e.target).val()];
+	        });
+	
+	        (0, _jquery2.default)('.color-value').spectrum({
+	            showAlpha: false,
+	            showInput: false,
+	            showPalette: true,
+	            showSelectionPalette: true,
+	            localStorageKey: "spectrum.picker",
+	            clickoutFiresChange: true,
+	            showButtons: false,
+	            replacerClassName: 'picker-val',
+	            change: function change(color) {
+	                changedPallete = true;
+	            }
+	        });
+	        (0, _jquery2.default)('.pallete-preset', (0, _jquery2.default)('.pallete-setting')).on('change', function (e) {
+	            changedPallete = true;
+	            var presetVal = (0, _jquery2.default)(e.target).val();
+	            for (var i = 0; i < presets[presetVal].length; i++) {
+	                (0, _jquery2.default)('.p' + i, (0, _jquery2.default)('.pallete-setting')).spectrum("set", 'rgb(' + red(presets[presetVal][i]) + ',' + green(presets[presetVal][i]) + ',' + blue(presets[presetVal][i]) + ')');
+	            }
+	        });
+	        (0, _jquery2.default)('.get-sound').on('click', function () {
+	            doSoundTest();
+	        });
+	    },
+	    changeColor: function changeColor() {
+	        var red = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).val(),
+	            green = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).val(),
+	            blue = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).val();
+	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-red')).text(red);
+	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-green')).text(green);
+	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-blue')).text(blue);
+	
+	        (0, _jquery2.default)('.color-preview').css('background-color', 'rgb(' + red + ',' + green + ',' + blue + ')');
+	
+	        var color = red << 16 | green << 8 | blue;
+	        (0, _jquery2.default)('.color-value').text(color);
+	    },
+	    sendToDevice: function sendToDevice() {
+	        var payload = {
+	            pallete: []
+	        };
+	
+	        var $palleteSetting = (0, _jquery2.default)('.pallete-setting');
+	
+	        for (var i = 0; i < 16; i++) {
+	            var color = (0, _jquery2.default)('.p' + i, $palleteSetting).spectrum("get");
+	            payload.pallete.push(color._r << 16 | color._g << 8 | color._b);
+	        }
+	
+	        undercabinet.postChanges(payload);
+	        changedPallete = false;
+	    },
+	    pullCurrentState: function pullCurrentState() {
+	        var statusBox = (0, _jquery2.default)('.status-message');
+	        ajax.post('/undercabinet/getState', '').then(function (resp) {
+	            statusBox.removeClass('error-message');
+	            statusBox.hide();
+	            undercabinet.setCurrentState(resp);
+	        }, function _fail() {
+	            statusBox.addClass('error-message');
+	            statusBox.text("Failed polling device... Yell at Joe!");
+	            statusBox.show();
+	        });
+	    },
+	    setCurrentState: function setCurrentState(stateData) {
+	        var options = stateData.options;
+	        var color = stateData.color;
+	
+	        (0, _jquery2.default)('.occupied .brightness input').val(options.occupied.brightness);
+	        (0, _jquery2.default)('.occupied .animation select').val(options.occupied.animation);
+	        (0, _jquery2.default)('.occupied .transition select').val(options.occupied.transition);
+	
+	        (0, _jquery2.default)('.unoccupied .brightness input').val(options.unoccupied.brightness);
+	        (0, _jquery2.default)('.unoccupied .animation select').val(options.unoccupied.animation);
+	        (0, _jquery2.default)('.unoccupied .transition select').val(options.unoccupied.transition);
+	
+	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).val(red(color));
+	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).val(green(color));
+	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).val(blue(color));
+	
+	        (0, _jquery2.default)('.color-preview').css('background-color', 'rgb(' + red(color) + ',' + green(color) + ',' + blue(color) + ')');
+	
+	        (0, _jquery2.default)('.color-value').text(color);
+	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-red')).text(red(color));
+	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-green')).text(green(color));
+	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-blue')).text(blue(color));
+	
+	        if (stateData.pallete) {
+	            var $palleteSetting = (0, _jquery2.default)('.pallete-setting');
+	            var pallete = stateData.pallete;
+	            for (var i = 0; i < pallete.length; i++) {
+	                (0, _jquery2.default)('.p' + i, $palleteSetting).spectrum("set", 'rgb(' + red(pallete[i]) + ',' + green(pallete[i]) + ',' + blue(pallete[i]) + ')');
+	            }
+	        }
+	    },
+	    postChanges: function postChanges(payload) {
+	        ajax.post('/undercabinet/changeOptions', JSON.stringify(payload), {
+	            contentType: "application/json; charset=utf-8" });
+	    },
+	    animate: function animate() {
+	        var animap = {
+	            1: undercabinet.animations.floatingGradients,
+	            2: undercabinet.animations.twinkle,
+	            //1: undercabinet.animations.,
+	            //1: undercabinet.animations.floatingGradients,
+	            6: undercabinet.animations.fire
+	        };
+	        var animationSelection = parseInt((0, _jquery2.default)('.animation-list', (0, _jquery2.default)('.animation-testing')).val());
+	        animationStates.forEach(function (states) {
+	            states.stop = true;
+	        });
+	        if (animationSelection === 0) {
+	            return;
+	        }
+	        if (animap[animationSelection]) {
+	            undercabinet.animationLoop(animap[animationSelection]);
+	        }
+	    },
+	    animationLoop: function animationLoop(frameFn, options) {
+	        function doFrame(state) {
+	            if (!state) {
+	                state = {
+	                    done: false,
+	                    frameNum: 0,
+	                    options: options || {}
+	                };
+	                animationStates.push(state);
+	            } else {
+	                state.frameNum++;
+	            }
+	            if (!state.done && !state.stop) {
+	                frameFn(state);
+	                setTimeout(doFrame, 30, state);
+	            } else {
+	                var idx = animationStates.indexOf(state);
+	                if (idx >= 0) {
+	                    animationStates.splice(idx, 1);
+	                }
+	            }
+	        }
+	
+	        doFrame();
+	    },
+	    animations: {
+	        fire: function fire(state) {
+	            var FIRE_DIFFUSE = 10;
+	
+	            if (!state.setup) {
+	                state.setup = true;
+	                state.fire = [];
+	                state.frameNum = 0;
+	
+	                for (var i = 0; i < LED_COUNT; i++) {
+	                    state.fire[i] = {
+	                        fireIdx: 0,
+	                        isFlareUp: 0
+	                    };
+	                }
+	            }
+	
+	            state.frameNum++;
+	            if (state.frameNum % 5 !== 0) {
+	                return state;
+	            }
+	
+	            // change add new flare up            
+	            if (random(0, 10) === 0) {
+	                // max new per frame 5%
+	                var newFlareUp = 1;
+	            }
+	
+	            // Find new twinkles
+	            for (var i = 0; i < newFlareUp; i++) {
+	                var randomPixel = random(0, LED_COUNT);
+	                if (!state.fire[randomPixel].isFlareUp) {
+	                    state.fire[randomPixel].isFlareUp = 1;
+	                    state.fire[randomPixel].fireIdx = 15;
+	                }
+	            }
+	
+	            for (var i = 0; i < LED_COUNT; i++) {
+	                if (!state.fire[i].isFlareUp) {
+	                    state.fire[i].fireIdx = random(4, 8);
+	                }
+	            }
+	
+	            for (var i = 0; i < LED_COUNT; i++) {
+	                if (state.fire[i].isFlareUp) {
+	                    var thisFireNode = state.fire[i];
+	                    if (random(0, 1000) % 2 == 0) {
+	                        thisFireNode.fireIdx += 1;
+	                    } else {
+	                        thisFireNode.fireIdx -= 2;
+	                    }
+	                    var flareUpIdx = thisFireNode.fireIdx;
+	
+	                    if (thisFireNode.fireIdx <= 8) {
+	                        thisFireNode.isFlareUp = 0;
+	                    } else {
+	                        for (var j = -FIRE_DIFFUSE + 1; j < FIRE_DIFFUSE; j++) {
+	                            var k = (i + j + LED_COUNT) % LED_COUNT;
+	                            // Use GetPixel/SetPixel on arduino
+	                            state.fire[k].fireIdx = Math.max(state.fire[k].fireIdx, flareUpIdx - Math.abs(j));
+	                        }
+	                    }
+	                }
+	            }
+	
+	            for (var i = 0; i < LED_COUNT; i++) {
+	                var thisEntry = HeatColors_p[Math.min(state.fire[i].fireIdx, 15)];
+	                (0, _jquery2.default)('#pix-' + i).css('background-color', 'rgb(' + red(thisEntry) + ',' + green(thisEntry) + ',' + blue(thisEntry) + ')');
+	            }
+	            return state;
+	        },
+	        pixelate: function pixelate(state) {
+	            var frameCount = 20;
+	
+	            if (!state.toColor) {
+	                var red = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).val(),
+	                    green = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).val(),
+	                    blue = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).val();
+	
+	                state.toColor = {
+	                    r: parseInt(red),
+	                    g: parseInt(green),
+	                    b: parseInt(blue)
+	                };
+	                state.cache = [];
+	                state.pixelsPerTransition = led_count / 20;
+	                for (var i = 0; i < 13; i++) {
+	                    state.cache.push(0);
+	                }
+	            }
+	
+	            if (state.frameNum < frameCount) {
+	                var pixelsInTransition = 0;
+	                var pixel = 0;
+	                while (pixelsInTransition < state.pixelsPerTransition) {
+	                    pixel = Math.round(Math.random(Date.now()) * 100 % 100);
+	                    if (!(state.cache[pixel >> 3] >> pixel % 8 & 1)) {
+	                        state.cache[pixel >> 3] |= 1 << pixel % 8;
+	                        (0, _jquery2.default)('#pix-' + pixel).css('background-color', 'rgb(' + state.toColor.r + ',' + state.toColor.g + ',' + state.toColor.b + ')');
+	                        //ws2812.setPixelColor(pixel, toColor);
+	                        pixelsInTransition++;
+	                    }
+	                }
+	            } else {
+	                for (var i = 0; i < led_count; i++) {
+	                    (0, _jquery2.default)('.pixel').css('background-color', 'rgb(' + state.toColor.r + ',' + state.toColor.g + ',' + state.toColor.b + ')');
+	                }
+	                last = state.toColor;
+	                state.done = true;
+	            }
+	        },
+	        floatingGradients: function floatingGradients(state) {
+	            var pallete = currentPallete;
+	            var numOfRandoms = 4;
+	
+	            var palleteSize = pallete.length;
+	            var divisor = Math.floor(led_count / pallete.length);
+	
+	            var RANDOM_NODE_COUNT = 4;
+	            var randomIdxOffset = palleteSize;
+	
+	            if (!state.setup) {
+	                state.cache = [];
+	                state.randomCount = RANDOM_NODE_COUNT;
+	                // mark values that will have random movement
+	                for (var i = 0; i < state.randomCount; i++) {
+	                    var rand = random(2, 5);
+	                    if (i > 0) {
+	                        rand += state.cache[randomIdxOffset + i - 1];
+	                    }
+	                    if (rand < palleteSize) {
+	                        state.cache[randomIdxOffset + i] = rand;
+	                    } else {
+	                        state.randomCount--;
+	                    }
+	                }
+	                state.freqOffset = palleteSize + state.randomCount;
+	                state.randomOffsetValue = state.freqOffset + state.randomCount;
+	
+	                for (var i = 0; i < numOfRandoms; i++) {
+	                    state.cache[state.freqOffset + i] = random(100, 200);
+	                }
+	
+	                for (var i = 0; i < palleteSize; i++) {
+	                    // set start locations
+	                    state.cache[i] = divisor * (i + 1);
+	                }
+	                for (var i = 0; i < state.randomCount; i++) {
+	                    state.cache[state.randomOffsetValue + i] = state.cache[state.cache[randomIdxOffset + i]];
+	                }
+	                state.setup = true;
+	            }
+	
+	            for (var i = 0; i < state.randomCount; i++) {
+	                state.cache[state.cache[randomIdxOffset + i]] = (state.cache[state.randomOffsetValue + i] + Math.floor(Math.sin(state.frameNum / state.cache[state.freqOffset + i]) * 90)) % led_count;
+	            }
+	
+	            var stretch = Math.floor(state.frameNum / 6) % led_count; //Math.floor(Math.sin(state.frameNum / 200) * 90 + 20);
+	
+	            function setColor(idx, color) {
+	                (0, _jquery2.default)('#pix-' + idx).css('background-color', 'rgb(' + red(color) + ',' + green(color) + ',' + blue(color) + ')');
+	            }
+	            var DIFFUSE_WIDTH = 15;
+	            function alpha_level(distance) {
+	                return distance / DIFFUSE_WIDTH * 255;
+	            }
+	            led_array = [];
+	            for (var i = 0; i < led_count; i++) {
+	                led_array[i] = 0;
+	            }
+	            for (var i = 0; i < palleteSize - 1; i++) {
+	                var thisColor = pallete[i];
+	                var position = state.cache[i] + stretch;
+	
+	                for (var j = -DIFFUSE_WIDTH + 1; j < DIFFUSE_WIDTH; j++) {
+	                    var k = (j + position + led_count) % led_count;
+	                    // Use GetPixel/SetPixel on arduino
+	                    led_array[k] = blendA(led_array[k], thisColor, alpha_level(Math.abs(j)));
+	                }
+	            }
+	
+	            for (var i = 0; i < led_count; i++) {
+	                setColor(i, led_array[i]);
+	            }
+	        },
+	        twinkle: function twinkle(state) {
+	            var normal = last;
+	            var brightness = max(normal.r, normal.g, normal.b);
+	            if (brightness == 0xFF) {
+	                state.done = true;
+	                // can't do brighter than max....
+	                return;
+	            }
+	            var twinkleVal = 0xFF >> 1;
+	            var difference = 0xFF - brightness;
+	
+	            if (!state.setup) {
+	                state.setup = true;
+	                state.cache = [];
+	                for (var i = 0; i < led_count; i++) {
+	                    state.cache[i] = 0;
+	                }
+	            }
+	            var newTwinkles = 0;
+	            if (0 === random(0, 7)) {
+	                newTwinkles = random(0, Math.ceil(led_count * .02 + 1));
+	            }
+	
+	            for (var i = 0; i < newTwinkles; i++) {
+	                var nextTwinkle = random(0, led_count);
+	                if (state.cache[nextTwinkle] === 0) {
+	                    state.cache[nextTwinkle] = twinkleVal;
+	                }
+	            }
+	
+	            for (var i = 0; i < led_count; i++) {
+	                if (state.cache[i] > 0) {
+	                    state.cache[i] -= 2;
+	                } else {
+	                    state.cache[i] = 0;
+	                }
+	            }
+	            for (var i = 0; i < led_count; i++) {
+	                var entry = normal;
+	                if (state.cache[i] > 0 && !(random(0, 20) === 0)) {
+	
+	                    entry = changeBrightness(normal, brightness + Math.ceil(state.cache[i] / twinkleVal * difference));
+	                }
+	                (0, _jquery2.default)('#pix-' + i).css('background-color', 'rgb(' + entry.r + ',' + entry.g + ',' + entry.b + ')');
+	            }
+	        },
+	        fade: function fade(state) {
+	            var frameCount = 20;
+	
+	            if (!state.toColor) {
+	                var red = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).val(),
+	                    green = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).val(),
+	                    blue = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).val();
+	                state.fromColor = last;
+	                state.currentColor = last;
+	                state.toColor = {
+	                    r: parseInt(red),
+	                    g: parseInt(green),
+	                    b: parseInt(blue)
+	                };
+	                state.steps = {
+	                    rStep: Math.round((state.toColor.r - last.r) / frameCount),
+	                    gStep: Math.round((state.toColor.g - last.g) / frameCount),
+	                    bStep: Math.round((state.toColor.b - last.b) / frameCount)
+	                };
+	            }
+	            // function setColor(color) {
+	            //     $('.pixel').css('background-color', 'rgb('+ color.r+','+ color.g+','+ color.b+')');
+	            //     last = color;
+	            // }
+	            if (state.frameNum < frameCount - 1) {
+	                state.currentColor = {
+	                    r: state.currentColor.r + state.steps.rStep,
+	                    g: state.currentColor.g + state.steps.gStep,
+	                    b: state.currentColor.b + state.steps.bStep
+	                };
+	                setColor(state.currentColor);
+	            } else {
+	                setColor(state.toColor);
+	                state.done = true;
+	            }
+	        }
+	    }
+	};
+	
+	(0, _jquery2.default)(document).ready(function () {
+	    var domElement = document.getElementById('undercabinet-light-control');
+	    if (domElement) {
+	        ReactDOM.render(React.createElement(
+	            _MuiThemeProvider2.default,
+	            { muiTheme: (0, _getMuiTheme2.default)() },
+	            React.createElement(_undercabinetLightControl2.default, null)
+	        ), domElement);
+	    }
+	
+	    //undercabinet.hookupEvents();
+	    //setTimeout(undercabinet.pullCurrentState, 2000);
+	});
+	
+	module.exports = undercabinet;
+
+/***/ },
+/* 468 */
+/*!****************************************!*\
+  !*** ./resources/js/app/helper/fft.js ***!
+  \****************************************/
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	var e = Math.E;
+	var pi = Math.PI;
+	var twoPi = Math.PI * 2;
+	
+	/*
+	basic complex number arithmetic from 
+	http://rosettacode.org/wiki/Fast_Fourier_transform#Scala
+	*/
+	function Complex(re, im) {
+	    this.re = re;
+	    this.im = im || 0.0;
+	}
+	Complex.prototype.add = function (other, dst) {
+	    dst.re = this.re + other.re;
+	    dst.im = this.im + other.im;
+	    return dst;
+	};
+	Complex.prototype.sub = function (other, dst) {
+	    dst.re = this.re - other.re;
+	    dst.im = this.im - other.im;
+	    return dst;
+	};
+	Complex.prototype.mul = function (other, dst) {
+	    //cache re in case dst === this
+	    var r = this.re * other.re - this.im * other.im;
+	    dst.im = this.re * other.im + this.im * other.re;
+	    dst.re = r;
+	    return dst;
+	};
+	Complex.prototype.cexp = function (dst) {
+	    var er = Math.exp(this.re);
+	    dst.re = er * Math.cos(this.im);
+	    dst.im = er * Math.sin(this.im);
+	    return dst;
+	};
+	Complex.prototype.log = function () {
+	    /*
+	    although 'It's just a matter of separating out the real and imaginary parts of jw.' is not a helpful quote
+	    the actual formula I found here and the rest was just fiddling / testing and comparing with correct results.
+	    http://cboard.cprogramming.com/c-programming/89116-how-implement-complex-exponential-functions-c.html#post637921
+	    */
+	    if (!this.re) console.log(this.im.toString() + 'j');else if (this.im < 0) console.log(this.re.toString() + this.im.toString() + 'j');else console.log(this.re.toString() + '+' + this.im.toString() + 'j');
+	};
+	
+	var fft = {
+	    doFft: function doFft(samples, length) {
+	        var twoPiDiv = twoPi / length;
+	        var fq = [];
+	        var cos = [];
+	        var sin = [];
+	
+	        for (var k = 0; k < length / 2; k++) {
+	            for (var n = 0; n < length; n++) {
+	                var trigComp = -twoPiDiv * k * n;
+	                sin[k] = (sin[k] || 0) + samples[n] * Math.sin(trigComp);
+	                cos[k] = (cos[k] || 0) + samples[n] * Math.cos(trigComp);
+	            }
+	            fq[k] = Math.sqrt(Math.pow(sin[k], 2) + Math.pow(cos[k], 2));
+	        }
+	        fq[0] = 0;
+	        return fq;
+	    },
+	    cfft: function cfft(amplitudes) {
+	        var N = amplitudes.length;
+	        if (N <= 1) return amplitudes;
+	
+	        var hN = N / 2;
+	        var even = [];
+	        var odd = [];
+	
+	        even.length = hN;
+	        odd.length = hN;
+	
+	        for (var i = 0; i < hN; ++i) {
+	            even[i] = amplitudes[i * 2];
+	            odd[i] = amplitudes[i * 2 + 1];
+	        }
+	        even = fft.cfft(even);
+	        odd = fft.cfft(odd);
+	
+	        var twiddle = -2 * Math.PI;
+	        for (var k = 0; k < hN; ++k) {
+	            if (!(even[k] instanceof Complex)) even[k] = new Complex(even[k], 0);
+	            if (!(odd[k] instanceof Complex)) odd[k] = new Complex(odd[k], 0);
+	
+	            var div = k / N;
+	            var t = new Complex(0, twiddle * div);
+	
+	            t.cexp(t).mul(odd[k], t);
+	
+	            amplitudes[k] = even[k].add(t, odd[k]);
+	            amplitudes[k + hN] = even[k].sub(t, even[k]);
+	        }
+	        return amplitudes;
+	    },
+	    realFft: function realFft(S, start, length, stride, X) {
+	        // X0,...,N−1 ← ditfft2(x, N, s):             DFT of (x0, xs, x2s, ..., x(N-1)s):
+	        // if N = 1 then
+	        //     X0 ← x0                                      trivial size-1 DFT base case
+	        // else
+	        //     X0,...,N/2−1 ← ditfft2(x, N/2, 2s)             DFT of (x0, x2s, x4s, ...)
+	        //     XN/2,...,N−1 ← ditfft2(x+s, N/2, 2s)           DFT of (xs, xs+2s, xs+4s, ...)
+	        //     for k = 0 to N/2−1                           combine DFTs of two halves into full DFT:
+	        //         t ← Xk
+	        //         Xk ← t + exp(−2πi k/N) Xk+N/2
+	        //         Xk+N/2 ← t − exp(−2πi k/N) Xk+N/2
+	        //     endfor
+	        // endif        
+	        if (length === 1) {
+	            X[start].re = S[start];
+	            X[start].im = S[start];
+	            return;
+	        }
+	
+	        var negTwoPiDiv = -twoPi / length;
+	        var halfLen = length / 2;
+	
+	        fft.realFft(S, start, halfLen, stride * 2, X);
+	        fft.realFft(S, start + stride, halfLen, stride * 2, X);
+	
+	        for (var k = 0; k < halfLen; k++) {
+	            var shifted = k * stride + start;
+	            var t = X[shifted];
+	            var x1re = Math.sin(negTwoPiDiv * k) * X[shifted + halfLen].re;
+	            var x1im = Math.cos(negTwoPiDiv * k) * X[shifted + halfLen].im;
+	
+	            // k00 = start + k*stride;    
+	            // k01 = k00 + halfLen*stride;
+	
+	            // k10 = start + 2*k*stride;  
+	            // k11 = k10 + stride;
+	
+	            // cs = cos(TWO_PI*k/(double)N); sn = sin(TWO_PI*k/(double)N);
+	            // tmp0 = cs * XX[k11][0] + sn * XX[k11][1];
+	            // tmp1 = cs * XX[k11][1] - sn * XX[k11][0];
+	
+	            // X[k01][0] = XX[k10][0] - tmp0;
+	            // X[k01][1] = XX[k10][1] - tmp1;
+	
+	            // X[k00][0] = XX[k10][0] + tmp0;
+	            //X[k00][1] = XX[k10][1] + tmp1
+	
+	            X[shifted] = {
+	                re: t.re + x1re,
+	                im: t.im + x1im
+	            };
+	            X[shifted + halfLen] = {
+	                re: t.re - x1re,
+	                im: t.im - x1im
+	            };
+	        }
+	        return X;
+	    },
+	    OtherFft: function OtherFft(S, start, length, stride) {
+	
+	        // X0,...,N−1 ← ditfft2(x, N, s):             DFT of (x0, xs, x2s, ..., x(N-1)s):
+	        // if N = 1 then
+	        //     X0 ← x0                                      trivial size-1 DFT base case
+	        // else
+	        //     X0,...,N/2−1 ← ditfft2(x, N/2, 2s)             DFT of (x0, x2s, x4s, ...)
+	        //     XN/2,...,N−1 ← ditfft2(x+s, N/2, 2s)           DFT of (xs, xs+2s, xs+4s, ...)
+	        //     for k = 0 to N/2−1                           combine DFTs of two halves into full DFT:
+	        //         t ← Xk
+	        //         Xk ← t + exp(−2πi k/N) Xk+N/2
+	        //         Xk+N/2 ← t − exp(−2πi k/N) Xk+N/2
+	        //     endfor
+	        // endif
+	
+	        if (length === 1) {
+	            return [{ re: S[start], im: S[start] }];
+	        }
+	
+	        var negTwoPiDiv = -twoPi / length;
+	        var halfLen = length / 2;
+	
+	        var first = fft.realFft(S, start, halfLen, stride * 2);
+	        var second = fft.realFft(S, start + stride, halfLen, stride * 2);
+	        var X = [];
+	
+	        for (var k = 0; k < halfLen; k++) {
+	
+	            var t = first[k];
+	
+	            x1re = Math.sin(negTwoPiDiv * k) * second[k].re;
+	            x1im = Math.cos(negTwoPiDiv * k) * second[k].im;
+	
+	            X[k] = {
+	                re: (t.re || 0) + x1re,
+	                im: (t.im || 0) + x1im
+	            };
+	            X[k + halfLen] = {
+	                re: (t.re || 0) - x1re,
+	                im: (t.im || 0) - x1im
+	            };
+	        }
+	        return X;
+	    }
+	};
+	
+	module.exports = fft;
+
+/***/ },
+/* 469 */
+/*!*************************************************************!*\
+  !*** ./resources/js/components/undercabinetLightControl.js ***!
+  \*************************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _react = __webpack_require__(/*! react */ 3);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _roomStateSettings = __webpack_require__(/*! ./roomStateSettings */ 470);
+	
+	var _roomStateSettings2 = _interopRequireDefault(_roomStateSettings);
+	
+	var _Tabs = __webpack_require__(/*! material-ui/Tabs */ 402);
+	
+	var _Tabs2 = _interopRequireDefault(_Tabs);
+	
+	var _Tab = __webpack_require__(/*! material-ui/Tabs/Tab */ 403);
+	
+	var _Tab2 = _interopRequireDefault(_Tab);
+	
+	var _TextField = __webpack_require__(/*! material-ui/TextField */ 414);
+	
+	var _TextField2 = _interopRequireDefault(_TextField);
+	
+	var _reactTapEventPlugin = __webpack_require__(/*! react-tap-event-plugin */ 550);
+	
+	var _reactTapEventPlugin2 = _interopRequireDefault(_reactTapEventPlugin);
+	
+	var _ajax = __webpack_require__(/*! ../app/ajax */ 438);
+	
+	var _ajax2 = _interopRequireDefault(_ajax);
+	
+	var _jquery = __webpack_require__(/*! jquery */ 2);
+	
+	var _jquery2 = _interopRequireDefault(_jquery);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	(0, _reactTapEventPlugin2.default)();
+	
+	var rssStyle = {
+	    width: '200px',
+	    float: 'left'
+	};
+	
+	var defaultOccupied = {
+	    brightness: 3,
+	    animation: 2,
+	    transition: 1,
+	    color: 2314241
+	};
+	
+	var UndercabinetLightControl = function (_React$Component) {
+	    _inherits(UndercabinetLightControl, _React$Component);
+	
+	    function UndercabinetLightControl(props) {
+	        _classCallCheck(this, UndercabinetLightControl);
+	
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(UndercabinetLightControl).call(this, props));
+	
+	        _this.state = {
+	            value: 'occupied'
+	        };
+	
+	        _this.handleChange = _this.handleChange.bind(_this);
+	        return _this;
+	    }
+	
+	    _createClass(UndercabinetLightControl, [{
+	        key: 'sendUpdate',
+	        value: function sendUpdate(newState) {
+	            var payload = {
+	                color: (newState.occupied || {}).color || 0,
+	                options: {
+	                    occupied: newState.occupied,
+	                    unoccupied: newState.unoccupied
+	                }
+	            };
+	
+	            _ajax2.default.post('/undercabinet/changeOptions', JSON.stringify(payload), {
+	                contentType: "application/json; charset=utf-8" });
+	        }
+	
+	        // getInitialState() {
+	        //     return {
+	
+	        //     };
+	        // }
+	
+	
+	    }, {
+	        key: 'componentDidMount',
+	        value: function componentDidMount() {
+	            var component = this;
+	            this.serverRequest = _ajax2.default.post('/undercabinet/getState', '').then(function (resp) {
+	
+	                // var newState = {
+	                //     pirTimeout: 2700,
+	                //     unoccupied: resp.options.unoccupied,
+	                //     occupied: resp.options.occupied
+	                // };
+	
+	                // newState.unoccupied.color = resp.color;
+	                // newState.unoccupied.pallete = resp.pallete;
+	
+	                // newState.occupied.color = resp.color;
+	                // newState.occupied.pallete = resp.pallete;
+	
+	                component.setState(resp.options);
+	            }, function _fail() {
+	                // statusBox.addClass('error-message');
+	                // statusBox.text("Failed polling device... Yell at Joe!");
+	                // statusBox.show();
+	            });
+	
+	            // this.serverRequest = $.get(this.props.source, function (result) {
+	            //     var lastGist = result[0];
+	            //     this.setState({
+	            //         username: lastGist.owner.login,
+	            //         lastGistUrl: lastGist.html_url
+	            //     });
+	            // }.bind(this));
+	        }
+	    }, {
+	        key: 'updateRoomSettings',
+	        value: function updateRoomSettings(name) {
+	            return function (key, value) {
+	                if (!this.state[name]) {
+	                    this.state[name] = {};
+	                }
+	                var settings = this.state[name];
+	                settings[key] = value;
+	                this.sendUpdate(this.state);
+	
+	                var update = {};
+	                update[name] = settings;
+	                this.setState(update);
+	            };
+	        }
+	    }, {
+	        key: 'componentWillUnmount',
+	        value: function componentWillUnmount() {
+	            this.serverRequest.abort();
+	        }
+	    }, {
+	        key: 'handleChange',
+	        value: function handleChange(value) {
+	            this.setState({
+	                value: value
+	            });
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var divStyle = {
+	                marginTop: '20px'
+	            };
+	            return _react2.default.createElement(
+	                'div',
+	                null,
+	                _react2.default.createElement(
+	                    _Tabs2.default,
+	                    { value: this.state.value, onChange: this.handleChange },
+	                    _react2.default.createElement(
+	                        _Tab2.default,
+	                        { label: 'Occupied', value: 'occupied' },
+	                        _react2.default.createElement(
+	                            'div',
+	                            { style: divStyle },
+	                            _react2.default.createElement(_roomStateSettings2.default, {
+	                                data: this.state.occupied,
+	                                updateValue: this.updateRoomSettings('occupied').bind(this) })
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        _Tab2.default,
+	                        { label: 'UnOccupied', value: 'unoccupied' },
+	                        _react2.default.createElement(
+	                            'div',
+	                            { style: divStyle },
+	                            _react2.default.createElement(_roomStateSettings2.default, {
+	                                data: this.state.unoccupied,
+	                                updateValue: this.updateRoomSettings('unoccupied').bind(this) })
+	                        )
+	                    )
+	                )
+	            );
+	        }
+	    }]);
+	
+	    return UndercabinetLightControl;
+	}(_react2.default.Component);
+	
+	exports.default = UndercabinetLightControl;
+
+/***/ },
+/* 470 */
+/*!******************************************************!*\
+  !*** ./resources/js/components/roomStateSettings.js ***!
+  \******************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _react = __webpack_require__(/*! react */ 3);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _ramda = __webpack_require__(/*! ramda */ 471);
+	
+	var _ramda2 = _interopRequireDefault(_ramda);
+	
+	var _pallete = __webpack_require__(/*! ./pallete */ 472);
+	
+	var _pallete2 = _interopRequireDefault(_pallete);
+	
+	var _Slider = __webpack_require__(/*! material-ui/Slider */ 473);
+	
+	var _Slider2 = _interopRequireDefault(_Slider);
+	
+	var _SelectField = __webpack_require__(/*! material-ui/SelectField */ 453);
+	
+	var _SelectField2 = _interopRequireDefault(_SelectField);
+	
+	var _MenuItem = __webpack_require__(/*! material-ui/MenuItem */ 223);
+	
+	var _MenuItem2 = _interopRequireDefault(_MenuItem);
+	
+	var _reactColor = __webpack_require__(/*! react-color */ 475);
+	
+	var _reactModal = __webpack_require__(/*! react-modal */ 530);
+	
+	var _reactModal2 = _interopRequireDefault(_reactModal);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var animations = [{ value: 0, text: 'None' }, { value: 1, text: 'Color motion' }, { value: 2, text: 'Twinkle' }, { value: 3, text: 'Rainbow' }, { value: 4, text: 'Runner' }, { value: 5, text: 'Discrete' }, { value: 6, text: 'Fire' }, { value: 7, text: 'Frequency' }];
+	
+	var transitions = [{ value: 0, text: 'None' }, { value: 1, text: 'Fade' }, { value: 2, text: 'Pixelate' }];
+	
+	function createPropSetter(propName) {
+	    return function (e, value) {
+	        var obj = {};
+	
+	        // hack.
+	        if (propName === 'color') {
+	            value = transformRgbToColor(value);
+	        }
+	
+	        obj[propName] = value;
+	        this.setState(obj);
+	        this.props.updateValue(propName, value);
+	    };
+	}
+	
+	function transformRgbToColor(color) {
+	    var rgb = color.rgb;
+	
+	    return rgb.r << 16 | rgb.g << 8 | rgb.b;
+	}
+	
+	var RoomStateSettings = function (_React$Component) {
+	    _inherits(RoomStateSettings, _React$Component);
+	
+	    function RoomStateSettings(props) {
+	        _classCallCheck(this, RoomStateSettings);
+	
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(RoomStateSettings).call(this, props));
+	
+	        _this.state = {
+	            brightness: 4,
+	            animation: 4,
+	            transition: 1,
+	            displayColorPicker: false
+	        };
+	        _this.colorSelect = _this.colorSelect.bind(_this);
+	        _this.colorClick = _this.colorClick.bind(_this);
+	        _this.colorClose = _this.colorClose.bind(_this);
+	        return _this;
+	    }
+	
+	    // handleBrightnessChange(value) {
+	
+	    // }
+	    // handleAnimationChange(){}
+	    // handleTransitionChange
+	
+	
+	    _createClass(RoomStateSettings, [{
+	        key: 'colorSelect',
+	        value: function colorSelect(value) {
+	            value = transformRgbToColor(value);
+	
+	            this.setState({ color: value });
+	        }
+	    }, {
+	        key: 'colorClick',
+	        value: function colorClick() {
+	            this.setState({ displayColorPicker: !this.state.displayColorPicker });
+	        }
+	    }, {
+	        key: 'colorClose',
+	        value: function colorClose() {
+	            this.setState({ displayColorPicker: false });
+	
+	            this.props.updateValue('color', this.state.color);
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            _reactModal2.default.setAppElement(document.body);
+	            var data = this.props.data || {};
+	            var decColor = this.state.color || data.color || 0;
+	
+	            var color = {
+	                r: decColor >> 16,
+	                g: decColor >> 8 & 0xFF,
+	                b: decColor & 0xFF
+	            };
+	
+	            var minMax = function minMax(min, max, value) {
+	                return value < min ? 0 : value > max ? max : value;
+	            };
+	
+	            var s = {
+	                label: {
+	                    //display: 'table-cell', 
+	                    //width: '120px', 
+	                    textAlign: 'right',
+	                    verticalAlign: 'top',
+	                    paddingTop: '15px'
+	                },
+	                control: {
+	                    //display: 'table-cell' 
+	
+	                },
+	                row: {
+	                    //display: 'table-row' 
+	                },
+	                section: { float: 'left' },
+	                color: {
+	                    width: '70px',
+	                    height: '45px',
+	                    borderRadius: '4px',
+	                    background: 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')'
+	                },
+	                swatch: {
+	                    padding: '5px',
+	                    background: '#fff',
+	                    borderRadius: '1px',
+	                    boxShadow: '0 0 0 1px rgba(0,0,0,.1)',
+	                    display: 'inline-block',
+	                    cursor: 'pointer'
+	                },
+	                modal: {
+	                    overlay: {
+	                        position: 'fixed',
+	                        top: '0px',
+	                        left: '0px',
+	                        right: '0px',
+	                        bottom: '0px',
+	                        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+	                        zIndex: 3
+	                    },
+	                    content: {
+	                        border: '0px',
+	                        padding: '10px',
+	                        backgroundColor: 'rgba(255, 255, 255, 0.0)',
+	                        top: '90px',
+	                        right: '60px',
+	                        bottom: 'auto',
+	                        left: 'auto'
+	                        //boxShadow: '0 2px 10px rgba(0,0,0,.12), 0 2px 5px rgba(0,0,0,.16)'
+	                    }
+	                }
+	            };
+	
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'container-fluid' },
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'row' },
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'col-sm-6' },
+	                        _react2.default.createElement(
+	                            'div',
+	                            { style: s.row, className: 'row' },
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.label, className: 'col-xs-4' },
+	                                'Color'
+	                            ),
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.control, className: 'col-xs-8' },
+	                                _react2.default.createElement(
+	                                    'div',
+	                                    { style: s.swatch, onClick: this.colorClick },
+	                                    _react2.default.createElement('div', { style: s.color })
+	                                ),
+	                                _react2.default.createElement(
+	                                    _reactModal2.default,
+	                                    {
+	                                        isOpen: this.state.displayColorPicker,
+	                                        onRequestClose: this.colorClose,
+	                                        style: s.modal },
+	                                    _react2.default.createElement(
+	                                        'div',
+	                                        null,
+	                                        _react2.default.createElement(_reactColor.SketchPicker, {
+	                                            color: color,
+	                                            onChangeComplete: this.colorSelect,
+	                                            type: 'sketch'
+	                                        })
+	                                    )
+	                                )
+	                            )
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'col-sm-6' },
+	                        _react2.default.createElement(
+	                            'div',
+	                            { style: s.row, className: 'row' },
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.label, className: 'col-xs-4' },
+	                                'Brightness'
+	                            ),
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.control, className: 'col-xs-8' },
+	                                _react2.default.createElement(_Slider2.default, {
+	                                    value: minMax(0, 15, data.brightness),
+	                                    min: 0,
+	                                    max: 15,
+	                                    step: 1,
+	                                    onChange: createPropSetter('brightness').bind(this) })
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            'div',
+	                            { style: s.row, className: 'row' },
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.label, className: 'col-xs-4' },
+	                                'Animation'
+	                            ),
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.control, className: 'col-xs-8' },
+	                                _react2.default.createElement(
+	                                    _SelectField2.default,
+	                                    {
+	                                        fullWidth: true,
+	                                        value: data.animation,
+	                                        onChange: createPropSetter('animation').bind(this)
+	                                    },
+	                                    animations.map(function (animation) {
+	                                        return _react2.default.createElement(_MenuItem2.default, { key: animation.value, value: animation.value, primaryText: animation.text });
+	                                    })
+	                                )
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            'div',
+	                            { style: s.row, className: 'row' },
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.label, className: 'col-xs-4' },
+	                                'Transition'
+	                            ),
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.control, className: 'col-xs-8' },
+	                                _react2.default.createElement(
+	                                    _SelectField2.default,
+	                                    {
+	                                        fullWidth: true,
+	                                        value: data.transition,
+	                                        onChange: createPropSetter('transition').bind(this)
+	                                    },
+	                                    transitions.map(function (transition) {
+	                                        return _react2.default.createElement(_MenuItem2.default, { key: transition.value, value: transition.value, primaryText: transition.text });
+	                                    })
+	                                )
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            'div',
+	                            { style: s.row, className: 'row' },
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.label, className: 'col-xs-4' },
+	                                'Pattern'
+	                            ),
+	                            _react2.default.createElement(
+	                                'div',
+	                                { style: s.control, className: 'col-xs-8' },
+	                                _react2.default.createElement(_pallete2.default, {
+	                                    pallete: data.pallete,
+	                                    updateValue: createPropSetter('pallete').bind(this)
+	                                })
+	                            )
+	                        )
+	                    )
+	                )
+	            );
+	
+	            // return (
+	            //     <div>
+	            //         <div style={s.section}>
+	            //             Ambient Color: 
+	            //             <div style={s.swatch} onClick={ this.colorClick }>
+	            //                 <div style={s.color} />
+	            //             </div>
+	            //             <Modal
+	            //                 isOpen={this.state.displayColorPicker}
+	            //                 onRequestClose={this.colorClose}
+	            //                 style={s.modal} >
+	            //                 <ColorPicker 
+	            //                     type="sketch" 
+	            //                     color={ color }
+	            //                     onClose={ this.colorClose }
+	            //                     onChangeComplete={ this.colorSelect }/>
+	            //             </Modal>
+	            //         </div>
+	            //         <div style={s.section}>
+	            //             <div style={s.row}>
+	            //                 <div style={s.label}>Brightness</div>
+	            //                 <div style={s.control}><Slider
+	            //                         value={minMax(0, 15, data.brightness)}
+	            //                         min={0}
+	            //                         max={15}
+	            //                         step={1}
+	            //                         onChange={createPropSetter('brightness').bind(this)}/></div>
+	            //             </div> 
+	            //             <div style={s.row}>
+	            //                 <div style={s.label}>Animation</div>
+	            //                 <div style={s.control}><SelectField
+	            //                         value={data.animation}
+	            //                         onChange={createPropSetter('animation').bind(this)}
+	            //                     >{animations}
+	            //                     </SelectField>
+	            //                 </div>
+	            //             </div>
+	
+	            //             <div style={s.row}>
+	            //                 <div style={s.label}>trvansition</div>
+	            //                 <div style={s.control}><SelectField
+	            //                         value={data.transition}
+	            //                         onChange={createPropSetter('divansition').bind(this)}
+	            //                     >{transitions}
+	            //                     </SelectField>
+	            //                 </div>
+	            //             </div>
+	            //         </div>
+	            //     </div>  
+	            // ); 
+	        }
+	    }]);
+	
+	    return RoomStateSettings;
+	}(_react2.default.Component);
+	
+	exports.default = RoomStateSettings;
+
+/***/ },
+/* 471 */
 /*!***************************************************!*\
   !*** C:/source/GitHub/HIoS/~/ramda/dist/ramda.js ***!
   \***************************************************/
@@ -82911,1743 +84519,7 @@
 
 
 /***/ },
-/* 468 */,
-/* 469 */,
-/* 470 */,
-/* 471 */,
-/* 472 */,
-/* 473 */,
-/* 474 */,
-/* 475 */,
-/* 476 */,
-/* 477 */,
-/* 478 */,
-/* 479 */,
-/* 480 */,
-/* 481 */,
-/* 482 */,
-/* 483 */,
-/* 484 */,
-/* 485 */,
-/* 486 */,
-/* 487 */,
-/* 488 */,
-/* 489 */,
-/* 490 */,
-/* 491 */,
-/* 492 */,
-/* 493 */,
-/* 494 */,
-/* 495 */,
-/* 496 */,
-/* 497 */,
-/* 498 */,
-/* 499 */,
-/* 500 */,
-/* 501 */,
-/* 502 */,
-/* 503 */,
-/* 504 */,
-/* 505 */,
-/* 506 */,
-/* 507 */,
-/* 508 */,
-/* 509 */,
-/* 510 */,
-/* 511 */,
-/* 512 */,
-/* 513 */,
-/* 514 */,
-/* 515 */,
-/* 516 */,
-/* 517 */,
-/* 518 */,
-/* 519 */,
-/* 520 */,
-/* 521 */,
-/* 522 */,
-/* 523 */,
-/* 524 */,
-/* 525 */,
-/* 526 */,
-/* 527 */,
-/* 528 */,
-/* 529 */,
-/* 530 */,
-/* 531 */,
-/* 532 */,
-/* 533 */,
-/* 534 */,
-/* 535 */,
-/* 536 */,
-/* 537 */,
-/* 538 */,
-/* 539 */,
-/* 540 */,
-/* 541 */,
-/* 542 */,
-/* 543 */,
-/* 544 */,
-/* 545 */,
-/* 546 */,
-/* 547 */,
-/* 548 */,
-/* 549 */,
-/* 550 */,
-/* 551 */,
-/* 552 */,
-/* 553 */,
-/* 554 */,
-/* 555 */,
-/* 556 */,
-/* 557 */,
-/* 558 */,
-/* 559 */,
-/* 560 */,
-/* 561 */,
-/* 562 */,
-/* 563 */,
-/* 564 */,
-/* 565 */,
-/* 566 */,
-/* 567 */,
-/* 568 */,
-/* 569 */,
-/* 570 */,
-/* 571 */,
-/* 572 */,
-/* 573 */,
-/* 574 */,
-/* 575 */,
-/* 576 */,
-/* 577 */,
-/* 578 */,
-/* 579 */,
-/* 580 */,
-/* 581 */,
-/* 582 */,
-/* 583 */,
-/* 584 */,
-/* 585 */,
-/* 586 */,
-/* 587 */,
-/* 588 */,
-/* 589 */,
-/* 590 */,
-/* 591 */,
-/* 592 */,
-/* 593 */,
-/* 594 */,
-/* 595 */,
-/* 596 */,
-/* 597 */,
-/* 598 */,
-/* 599 */,
-/* 600 */,
-/* 601 */,
-/* 602 */,
-/* 603 */,
-/* 604 */,
-/* 605 */,
-/* 606 */,
-/* 607 */,
-/* 608 */,
-/* 609 */,
-/* 610 */,
-/* 611 */,
-/* 612 */,
-/* 613 */,
-/* 614 */
-/*!******************************************!*\
-  !*** ./resources/js/app/undercabinet.js ***!
-  \******************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	var _fft = __webpack_require__(/*! ./helper/fft */ 615);
-	
-	var _fft2 = _interopRequireDefault(_fft);
-	
-	var _jquery = __webpack_require__(/*! jquery */ 2);
-	
-	var _jquery2 = _interopRequireDefault(_jquery);
-	
-	var _undercabinetLightControl = __webpack_require__(/*! ../components/undercabinetLightControl */ 616);
-	
-	var _undercabinetLightControl2 = _interopRequireDefault(_undercabinetLightControl);
-	
-	var _getMuiTheme = __webpack_require__(/*! material-ui/styles/getMuiTheme */ 228);
-	
-	var _getMuiTheme2 = _interopRequireDefault(_getMuiTheme);
-	
-	var _MuiThemeProvider = __webpack_require__(/*! material-ui/styles/MuiThemeProvider */ 227);
-	
-	var _MuiThemeProvider2 = _interopRequireDefault(_MuiThemeProvider);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	var R = __webpack_require__(/*! ramda */ 467);
-	var Promise = __webpack_require__(/*! promise */ 439);
-	//require('./test');
-	var spectrum = __webpack_require__(/*! spectrum */ 702);
-	var ajax = __webpack_require__(/*! ./ajax */ 438);
-	var ReactDOM = __webpack_require__(/*! react-dom */ 35);
-	var React = __webpack_require__(/*! react */ 3);
-	//var Chart = require('chart');
-	var spectrum = __webpack_require__(/*! spectrum */ 702);
-	//var fft = require('./helper/fft');
-	//var $ = require('jquery');
-	//var UndercabinetLightControl = require('../components/undercabinetLightControl');
-	
-	
-	var presets = {
-	    party: [0x5500AB, 0x84007C, 0xB5004B, 0xE5001B, 0xE81700, 0xB84700, 0xAB7700, 0xABAB00, 0xAB5500, 0xDD2200, 0xF2000E, 0xC2003E, 0x8F0071, 0x5F00A1, 0x2F00D0, 0x0007F9],
-	    christmas: [0xFF0000, 0xFFFFFF, 0x00FF00, 0xFFFFFF, 0xFF0000, 0xFFFFFF, 0x00FF00, 0xFFFFFF, 0xFF0000, 0xFFFFFF, 0x00FF00, 0xFFFFFF, 0xFF0000, 0xFFFFFF, 0x00FF00, 0xFFFFFF],
-	    cute: [0xFFC1A6, 0x62C6AF, 0xE528DC, 0x4E81DC, 0xFFC1A6, 0x62C6AF, 0xE528DC, 0x4E81DC, 0xFFC1A6, 0x62C6AF, 0xE528DC, 0x4E81DC, 0xFFC1A6, 0x62C6AF, 0xE528DC, 0x4E81DC],
-	    dawn: [0xE1B245, 0xE16C2E, 0xECED0C, 0xEC3233, 0xE1B245, 0xE16C2E, 0xECED0C, 0xEC3233, 0xE1B245, 0xE16C2E, 0xECED0C, 0xEC3233, 0xE1B245, 0xE16C2E, 0xECED0C, 0xEC3233],
-	    bluegreen: [0x0000FF, 0x0000FF, 0x0000FF, 0x0000FF, 0xFFFFFF, 0xFFFFFF, 0x0000FF, 0x00FF00, 0x00FF00, 0x0000FF, 0x0000FF, 0xFFFFFF, 0xFFFFFF, 0x0000FF, 0x00FF00, 0x0000FF],
-	    rainbow: [0xFF0000, 0xD52A00, 0xAB5500, 0xAB7F00, 0xABAB00, 0x56D500, 0x00FF00, 0x00D52A, 0x00AB55, 0x0056AA, 0x0000FF, 0x2A00D5, 0x5500AB, 0x7F0081, 0xAB0055, 0xD5002B],
-	    jason: [0x84007C, 0x84007C, 0x84007C, 0x0007F9, 0x0007F9, 0x0007F9, 0x84007C, 0x84007C, 0x84007C, 0x0007F9, 0x0007F9, 0x0007F9, 0x84007C, 0x84007C, 0x0007F9, 0x0007F9]
-	};
-	var last = {
-	    r: 0,
-	    g: 0,
-	    b: 0
-	};
-	var currentPallete = presets.party;
-	
-	var changedPallete = false;
-	var led_array = [];
-	var led_count = 100;
-	var LED_COUNT = led_count;
-	var animationStates = [];
-	var PartyColors_p = [0x5500AB, 0x84007C, 0xB5004B, 0xE5001B, 0xE81700, 0xB84700, 0xAB7700, 0xABAB00, 0xAB5500, 0xDD2200, 0xF2000E, 0xC2003E, 0x8F0071, 0x5F00A1, 0x2F00D0, 0x0007F9];
-	var HeatColors_p = [0x000000, 0x330000, 0x660000, 0x990000, 0xCC0000, 0xFF0000, 0xFF3300, 0xFF6600, 0xFF9900, 0xFFCC00, 0xFFFF00, 0xFFFF33, 0xFFFF66, 0xFFFF99, 0xFFFFCC, 0xFFFFFF];
-	function red(color) {
-	    return color >> 16;
-	}
-	function green(color) {
-	    return color >> 8 & 0xFF;
-	}
-	function blue(color) {
-	    return color & 0xFF;
-	}
-	function combine(r, g, b) {
-	    return r << 16 | g << 8 | b;
-	}
-	function random(min, max) {
-	    if (min && !max && max != 0) {
-	        max = min;
-	        min = 0;
-	    } else {
-	        min = min || 0;
-	        max = max || 0xFF;
-	    }
-	    return Math.floor(Math.random() * (max - min) + min);
-	}
-	function max(a, b, c) {
-	    var m = a;
-	    m < b && (m = b);
-	    m < c && (m = c);
-	    return m;
-	}
-	function setColor(color) {
-	    (0, _jquery2.default)('.pixel').css('background-color', 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')');
-	    last = color;
-	}
-	function blendA(color1, color2, alph) {
-	    var alpha = alph + 1;
-	    var inv_alpha = 256 - alph;
-	
-	    return combine(red(color1) * alpha + inv_alpha * red(color2) >> 8, green(color1) * alpha + inv_alpha * green(color2) >> 8, blue(color1) * alpha + inv_alpha * blue(color2) >> 8);
-	}
-	function scale(value, maxValue) {
-	    return (value || 1) * maxValue >> 8;
-	}
-	function scaleC(color, maxValue) {
-	    // scale
-	    if (maxValue == 0xFF) {
-	        return;
-	    }
-	    return {
-	        r: scale(color.r, maxValue),
-	        g: scale(color.g, maxValue),
-	        b: scale(color.b, maxValue)
-	    };
-	}
-	function changeBrightness(color, newBrightness) {
-	    var maxValue = max(color.r, color.g, color.b) || 1;
-	    return {
-	        r: Math.round(color.r * newBrightness / maxValue),
-	        g: Math.round(color.g * newBrightness / maxValue),
-	        b: Math.round(color.b * newBrightness / maxValue)
-	    };
-	}
-	
-	// var doSoundTest = (function() {
-	//     var isSetup = false;
-	//     var node = null;
-	//     var audioContext = null;
-	//     var lastBuffer = [];
-	//     var getSample = true;
-	//     var chart = null;
-	//     var fqChart = null;
-	//     var fftData = [];
-	//     var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-	//     var gainNode = audioContext.createGain();
-	//     gainNode.gain.value = 5;
-	
-	//     function setGraph() {
-	
-	//         var chartOptions = {
-	//             // Boolean - Whether to animate the chart
-	//             animation: false,
-	//             legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>",
-	//             responsive: false,
-	//             maintainAspectRatio: false,
-	//             pointDot: false,
-	//             scaleLabel: " ",
-	//             scaleShowVerticalLines: false,
-	//             scaleBeginAtZero: true,
-	
-	
-	//             // Boolean - Determines whether to draw tooltips on the canvas or not
-	//             showTooltips: false,
-	//             // Boolean - If we want to override with a hard coded scale
-	//             scaleOverride: true,
-	
-	//             // ** Required if scaleOverride is true **
-	//             // Number - The number of steps in a hard coded scale
-	//             scaleSteps: 32,
-	//             // Number - The value jump in the hard coded scale
-	//             scaleStepWidth: 8,
-	//             // Number - The scale 
-	//             scaleStartValue: 0
-	//         };
-	//         var chartDataset = {
-	//             label: "Meat",
-	//             fillColor: "rgba(178,141,91,0.2)",
-	//             pointColor: "rgba(178,141,91,1)",
-	//             pointStrokeColor: "#fff",
-	//             pointHighlightFill: "#fff",
-	//             pointHighlightStroke: "rgba(178,141,91,1)",
-	//             data: lastBuffer
-	//         };
-	//         var chartData = {
-	//             datasets: [chartDataset],
-	//             labels: R.map(function(){return '';}, new Array(1024))
-	//         };
-	//         if(!chart) {
-	//             var ctx = document.getElementById('sound-data-graph').getContext("2d");
-	//             var chart = new Chart(ctx).Line(chartData, chartOptions);
-	//         } else {
-	//             chart.initialize(chartData);
-	//         } 
-	
-	//         // bar chart
-	//         chartOptions = {
-	//             animation: false,
-	//             //Number - Pixel width of the bar stroke
-	//             barStrokeWidth : 1,
-	
-	//             //Number - Spacing between each of the X value sets
-	//             barValueSpacing : 1,
-	
-	//             //Number - Spacing between data sets within X values
-	//             barDatasetSpacing : 1,
-	
-	//             // Boolean - whether to maintain the starting aspect ratio or not when responsive, if set to false, will take up entire container
-	//             maintainAspectRatio: true,
-	//             responsive: false,
-	//             // Boolean - Determines whether to draw tooltips on the canvas or not
-	//             showTooltips: false,
-	//             // Boolean - If we want to override with a hard coded scale
-	//             scaleOverride: true,
-	
-	//             // ** Required if scaleOverride is true **
-	//             // Number - The number of steps in a hard coded scale
-	//             scaleSteps: 5,
-	//             // Number - The value jump in the hard coded scale
-	//             scaleStepWidth: 1000,
-	//             // Number - The scale 
-	//             scaleStartValue: 0
-	//         }; 
-	//         var data = fftData.splice(0, 512);
-	//         chartData = {
-	//             datasets: [{ 
-	//                 label: "My First dataset",
-	//                 fillColor: "rgba(220,220,220,0.5)",
-	//                 strokeColor: "rgba(220,220,220,0.8)",
-	//                 highlightFill: "rgba(220,220,220,0.75)",
-	//                 highlightStroke: "rgba(220,220,220,1)",
-	//                 data: data
-	//             }],
-	//             labels: R.map(function(){return '';}, data)
-	//         };
-	//         if(!fqChart) {
-	//             var ctx = document.getElementById('freq-data-graph').getContext("2d");
-	//             var fqChart = new Chart(ctx).Bar(chartData, chartOptions);
-	//         } else {
-	//             fqChart.initialize(chartData);
-	//         }
-	//     }
-	
-	//     function setup() {
-	//         if(isSetup){
-	//             return;
-	//         }
-	//         isSetup = true;
-	//         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
-	//         navigator.getUserMedia(
-	//             { audio: true }, 
-	//             function(stream) {
-	//                 var source = audioContext.createMediaStreamSource(stream);
-	//                 node = audioContext.createScriptProcessor(1024, 1, 1);
-	//                 node.onaudioprocess = (e) => {
-	//                     if (!getSample) { return; }
-	
-	//                     var thisBuffer = e.inputBuffer.getChannelData(0);
-	
-	//                     //normalize to 8 bit
-	//                     for(var i = 0; i < 1024; i++) { 
-	//                         lastBuffer[i] = Math.floor((thisBuffer[i] + 1) * 128);
-	//                     }
-	
-	//                     getSample = false
-	//                 }; 
-	
-	//                 // source -> gain -> output buffer
-	
-	//                 source.connect(gainNode);
-	//                 gainNode.connect(node);
-	//                 node.connect(audioContext.destination); 
-	
-	//             }, 
-	//             function(){/*lol*/}
-	//         );
-	//     } 
-	//     function newObj() {
-	//         return {re:0, im:0};
-	//     }
-	//     function makeRec(len) {
-	//         var arr = [];
-	//         for(var i = 0; i < len; i++) {
-	//             arr[i] = {re: 0, im: 0};
-	//         }
-	//         return arr;
-	//     };
-	
-	//     return function() { 
-	//         //
-	//         var test = [1,1,1,1,0,0,0,0];
-	
-	//         var result = test.slice();
-	
-	//         fft.cfft(result);
-	
-	//         return;
-	//         //
-	//         setup(); 
-	//         getSample = true;
-	//         setTimeout(function() { 
-	//             var fftResult = lastBuffer.slice();
-	//             //fftResult = fft.realFft(lastBuffer, 0, 1024, 1, makeRec(1024));
-	//             fft.cfft(fftResult);
-	//             fftData = R.map(
-	//                 function(fact){  
-	//                     return Math.sqrt(Math.pow(fact.re, 2) + Math.pow(fact.im, 2));
-	//                 }, 
-	//                 fftResult); 
-	
-	//             setGraph();
-	//             doSoundTest(); 
-	//         }, 120);  
-	//     } 
-	// }());
-	
-	var undercabinet = {
-	    hookupEvents: function hookupEvents() {
-	
-	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).on('change', undercabinet.changeColor);
-	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).on('change', undercabinet.changeColor);
-	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).on('change', undercabinet.changeColor);
-	        (0, _jquery2.default)('.do-animate').on('click', undercabinet.animate);
-	        (0, _jquery2.default)('.send-color').on('click', undercabinet.sendToDevice);
-	
-	        var simulation = (0, _jquery2.default)('.led-simulation');
-	        for (var i = 0; i < led_count; i++) {
-	            var newPixel = document.createElement('div');
-	            newPixel.className = 'pixel';
-	            newPixel.id = "pix-" + i;
-	            simulation.append(newPixel);
-	        }
-	        var presetLists = (0, _jquery2.default)('.pallete-preset');
-	        for (var key in presets) {
-	            presetLists.append('<option value="' + key + '">' + key + '</option>');
-	        }
-	        var selectList = (0, _jquery2.default)('.animation-list');
-	        selectList.append('<option value="6">Fire</option>');
-	        selectList.append('<option value="0">None</option>');
-	        selectList.append('<option value="1">Smooth Color motion</option>');
-	        selectList.append('<option value="2">Twinkle</option>');
-	        selectList.append('<option value="3">Rainbow</option>');
-	        selectList.append('<option value="4">Runner</option>');
-	        selectList.append('<option value="5">Discrete</option>');
-	        selectList.append('<option value="6">Fire</option>');
-	        selectList.append('<option value="7">Frequency</option>');
-	
-	        (0, _jquery2.default)('#testOne').append('<paper-item>Testing</paper-item>');
-	
-	        var transitionLists = (0, _jquery2.default)('.transition-list');
-	
-	        transitionLists.append('<option value="0">None</option>');
-	        transitionLists.append('<option value="1">Fade</option>');
-	        transitionLists.append('<option value="2">Pixelate</option>');
-	        (0, _jquery2.default)('.pallete-preset', (0, _jquery2.default)('.animation-testing')).on('change', function (e) {
-	            currentPallete = presets[(0, _jquery2.default)(e.target).val()];
-	        });
-	
-	        (0, _jquery2.default)('.color-value').spectrum({
-	            showAlpha: false,
-	            showInput: false,
-	            showPalette: true,
-	            showSelectionPalette: true,
-	            localStorageKey: "spectrum.picker",
-	            clickoutFiresChange: true,
-	            showButtons: false,
-	            replacerClassName: 'picker-val',
-	            change: function change(color) {
-	                changedPallete = true;
-	            }
-	        });
-	        (0, _jquery2.default)('.pallete-preset', (0, _jquery2.default)('.pallete-setting')).on('change', function (e) {
-	            changedPallete = true;
-	            var presetVal = (0, _jquery2.default)(e.target).val();
-	            for (var i = 0; i < presets[presetVal].length; i++) {
-	                (0, _jquery2.default)('.p' + i, (0, _jquery2.default)('.pallete-setting')).spectrum("set", 'rgb(' + red(presets[presetVal][i]) + ',' + green(presets[presetVal][i]) + ',' + blue(presets[presetVal][i]) + ')');
-	            }
-	        });
-	        (0, _jquery2.default)('.get-sound').on('click', function () {
-	            doSoundTest();
-	        });
-	    },
-	    changeColor: function changeColor() {
-	        var red = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).val(),
-	            green = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).val(),
-	            blue = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).val();
-	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-red')).text(red);
-	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-green')).text(green);
-	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-blue')).text(blue);
-	
-	        (0, _jquery2.default)('.color-preview').css('background-color', 'rgb(' + red + ',' + green + ',' + blue + ')');
-	
-	        var color = red << 16 | green << 8 | blue;
-	        (0, _jquery2.default)('.color-value').text(color);
-	    },
-	    sendToDevice: function sendToDevice() {
-	        var payload = {
-	            pallete: []
-	        };
-	
-	        var $palleteSetting = (0, _jquery2.default)('.pallete-setting');
-	
-	        for (var i = 0; i < 16; i++) {
-	            var color = (0, _jquery2.default)('.p' + i, $palleteSetting).spectrum("get");
-	            payload.pallete.push(color._r << 16 | color._g << 8 | color._b);
-	        }
-	
-	        undercabinet.postChanges(payload);
-	        changedPallete = false;
-	    },
-	    pullCurrentState: function pullCurrentState() {
-	        var statusBox = (0, _jquery2.default)('.status-message');
-	        ajax.post('/undercabinet/getState', '').then(function (resp) {
-	            statusBox.removeClass('error-message');
-	            statusBox.hide();
-	            undercabinet.setCurrentState(resp);
-	        }, function _fail() {
-	            statusBox.addClass('error-message');
-	            statusBox.text("Failed polling device... Yell at Joe!");
-	            statusBox.show();
-	        });
-	    },
-	    setCurrentState: function setCurrentState(stateData) {
-	        var options = stateData.options;
-	        var color = stateData.color;
-	
-	        (0, _jquery2.default)('.occupied .brightness input').val(options.occupied.brightness);
-	        (0, _jquery2.default)('.occupied .animation select').val(options.occupied.animation);
-	        (0, _jquery2.default)('.occupied .transition select').val(options.occupied.transition);
-	
-	        (0, _jquery2.default)('.unoccupied .brightness input').val(options.unoccupied.brightness);
-	        (0, _jquery2.default)('.unoccupied .animation select').val(options.unoccupied.animation);
-	        (0, _jquery2.default)('.unoccupied .transition select').val(options.unoccupied.transition);
-	
-	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).val(red(color));
-	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).val(green(color));
-	        (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).val(blue(color));
-	
-	        (0, _jquery2.default)('.color-preview').css('background-color', 'rgb(' + red(color) + ',' + green(color) + ',' + blue(color) + ')');
-	
-	        (0, _jquery2.default)('.color-value').text(color);
-	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-red')).text(red(color));
-	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-green')).text(green(color));
-	        (0, _jquery2.default)('.color-part-value-disp', (0, _jquery2.default)('#color-blue')).text(blue(color));
-	
-	        if (stateData.pallete) {
-	            var $palleteSetting = (0, _jquery2.default)('.pallete-setting');
-	            var pallete = stateData.pallete;
-	            for (var i = 0; i < pallete.length; i++) {
-	                (0, _jquery2.default)('.p' + i, $palleteSetting).spectrum("set", 'rgb(' + red(pallete[i]) + ',' + green(pallete[i]) + ',' + blue(pallete[i]) + ')');
-	            }
-	        }
-	    },
-	    postChanges: function postChanges(payload) {
-	        ajax.post('/undercabinet/changeOptions', JSON.stringify(payload), {
-	            contentType: "application/json; charset=utf-8" });
-	    },
-	    animate: function animate() {
-	        var animap = {
-	            1: undercabinet.animations.floatingGradients,
-	            2: undercabinet.animations.twinkle,
-	            //1: undercabinet.animations.,
-	            //1: undercabinet.animations.floatingGradients,
-	            6: undercabinet.animations.fire
-	        };
-	        var animationSelection = parseInt((0, _jquery2.default)('.animation-list', (0, _jquery2.default)('.animation-testing')).val());
-	        animationStates.forEach(function (states) {
-	            states.stop = true;
-	        });
-	        if (animationSelection === 0) {
-	            return;
-	        }
-	        if (animap[animationSelection]) {
-	            undercabinet.animationLoop(animap[animationSelection]);
-	        }
-	    },
-	    animationLoop: function animationLoop(frameFn, options) {
-	        function doFrame(state) {
-	            if (!state) {
-	                state = {
-	                    done: false,
-	                    frameNum: 0,
-	                    options: options || {}
-	                };
-	                animationStates.push(state);
-	            } else {
-	                state.frameNum++;
-	            }
-	            if (!state.done && !state.stop) {
-	                frameFn(state);
-	                setTimeout(doFrame, 30, state);
-	            } else {
-	                var idx = animationStates.indexOf(state);
-	                if (idx >= 0) {
-	                    animationStates.splice(idx, 1);
-	                }
-	            }
-	        }
-	
-	        doFrame();
-	    },
-	    animations: {
-	        fire: function fire(state) {
-	            var FIRE_DIFFUSE = 10;
-	
-	            if (!state.setup) {
-	                state.setup = true;
-	                state.fire = [];
-	                state.frameNum = 0;
-	
-	                for (var i = 0; i < LED_COUNT; i++) {
-	                    state.fire[i] = {
-	                        fireIdx: 0,
-	                        isFlareUp: 0
-	                    };
-	                }
-	            }
-	
-	            state.frameNum++;
-	            if (state.frameNum % 5 !== 0) {
-	                return state;
-	            }
-	
-	            // change add new flare up            
-	            if (random(0, 10) === 0) {
-	                // max new per frame 5%
-	                var newFlareUp = 1;
-	            }
-	
-	            // Find new twinkles
-	            for (var i = 0; i < newFlareUp; i++) {
-	                var randomPixel = random(0, LED_COUNT);
-	                if (!state.fire[randomPixel].isFlareUp) {
-	                    state.fire[randomPixel].isFlareUp = 1;
-	                    state.fire[randomPixel].fireIdx = 15;
-	                }
-	            }
-	
-	            for (var i = 0; i < LED_COUNT; i++) {
-	                if (!state.fire[i].isFlareUp) {
-	                    state.fire[i].fireIdx = random(4, 8);
-	                }
-	            }
-	
-	            for (var i = 0; i < LED_COUNT; i++) {
-	                if (state.fire[i].isFlareUp) {
-	                    var thisFireNode = state.fire[i];
-	                    if (random(0, 1000) % 2 == 0) {
-	                        thisFireNode.fireIdx += 1;
-	                    } else {
-	                        thisFireNode.fireIdx -= 2;
-	                    }
-	                    var flareUpIdx = thisFireNode.fireIdx;
-	
-	                    if (thisFireNode.fireIdx <= 8) {
-	                        thisFireNode.isFlareUp = 0;
-	                    } else {
-	                        for (var j = -FIRE_DIFFUSE + 1; j < FIRE_DIFFUSE; j++) {
-	                            var k = (i + j + LED_COUNT) % LED_COUNT;
-	                            // Use GetPixel/SetPixel on arduino
-	                            state.fire[k].fireIdx = Math.max(state.fire[k].fireIdx, flareUpIdx - Math.abs(j));
-	                        }
-	                    }
-	                }
-	            }
-	
-	            for (var i = 0; i < LED_COUNT; i++) {
-	                var thisEntry = HeatColors_p[Math.min(state.fire[i].fireIdx, 15)];
-	                (0, _jquery2.default)('#pix-' + i).css('background-color', 'rgb(' + red(thisEntry) + ',' + green(thisEntry) + ',' + blue(thisEntry) + ')');
-	            }
-	            return state;
-	        },
-	        pixelate: function pixelate(state) {
-	            var frameCount = 20;
-	
-	            if (!state.toColor) {
-	                var red = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).val(),
-	                    green = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).val(),
-	                    blue = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).val();
-	
-	                state.toColor = {
-	                    r: parseInt(red),
-	                    g: parseInt(green),
-	                    b: parseInt(blue)
-	                };
-	                state.cache = [];
-	                state.pixelsPerTransition = led_count / 20;
-	                for (var i = 0; i < 13; i++) {
-	                    state.cache.push(0);
-	                }
-	            }
-	
-	            if (state.frameNum < frameCount) {
-	                var pixelsInTransition = 0;
-	                var pixel = 0;
-	                while (pixelsInTransition < state.pixelsPerTransition) {
-	                    pixel = Math.round(Math.random(Date.now()) * 100 % 100);
-	                    if (!(state.cache[pixel >> 3] >> pixel % 8 & 1)) {
-	                        state.cache[pixel >> 3] |= 1 << pixel % 8;
-	                        (0, _jquery2.default)('#pix-' + pixel).css('background-color', 'rgb(' + state.toColor.r + ',' + state.toColor.g + ',' + state.toColor.b + ')');
-	                        //ws2812.setPixelColor(pixel, toColor);
-	                        pixelsInTransition++;
-	                    }
-	                }
-	            } else {
-	                for (var i = 0; i < led_count; i++) {
-	                    (0, _jquery2.default)('.pixel').css('background-color', 'rgb(' + state.toColor.r + ',' + state.toColor.g + ',' + state.toColor.b + ')');
-	                }
-	                last = state.toColor;
-	                state.done = true;
-	            }
-	        },
-	        floatingGradients: function floatingGradients(state) {
-	            var pallete = currentPallete;
-	            var numOfRandoms = 4;
-	
-	            var palleteSize = pallete.length;
-	            var divisor = Math.floor(led_count / pallete.length);
-	
-	            var RANDOM_NODE_COUNT = 4;
-	            var randomIdxOffset = palleteSize;
-	
-	            if (!state.setup) {
-	                state.cache = [];
-	                state.randomCount = RANDOM_NODE_COUNT;
-	                // mark values that will have random movement
-	                for (var i = 0; i < state.randomCount; i++) {
-	                    var rand = random(2, 5);
-	                    if (i > 0) {
-	                        rand += state.cache[randomIdxOffset + i - 1];
-	                    }
-	                    if (rand < palleteSize) {
-	                        state.cache[randomIdxOffset + i] = rand;
-	                    } else {
-	                        state.randomCount--;
-	                    }
-	                }
-	                state.freqOffset = palleteSize + state.randomCount;
-	                state.randomOffsetValue = state.freqOffset + state.randomCount;
-	
-	                for (var i = 0; i < numOfRandoms; i++) {
-	                    state.cache[state.freqOffset + i] = random(100, 200);
-	                }
-	
-	                for (var i = 0; i < palleteSize; i++) {
-	                    // set start locations
-	                    state.cache[i] = divisor * (i + 1);
-	                }
-	                for (var i = 0; i < state.randomCount; i++) {
-	                    state.cache[state.randomOffsetValue + i] = state.cache[state.cache[randomIdxOffset + i]];
-	                }
-	                state.setup = true;
-	            }
-	
-	            for (var i = 0; i < state.randomCount; i++) {
-	                state.cache[state.cache[randomIdxOffset + i]] = (state.cache[state.randomOffsetValue + i] + Math.floor(Math.sin(state.frameNum / state.cache[state.freqOffset + i]) * 90)) % led_count;
-	            }
-	
-	            var stretch = Math.floor(state.frameNum / 6) % led_count; //Math.floor(Math.sin(state.frameNum / 200) * 90 + 20);
-	
-	            function setColor(idx, color) {
-	                (0, _jquery2.default)('#pix-' + idx).css('background-color', 'rgb(' + red(color) + ',' + green(color) + ',' + blue(color) + ')');
-	            }
-	            var DIFFUSE_WIDTH = 15;
-	            function alpha_level(distance) {
-	                return distance / DIFFUSE_WIDTH * 255;
-	            }
-	            led_array = [];
-	            for (var i = 0; i < led_count; i++) {
-	                led_array[i] = 0;
-	            }
-	            for (var i = 0; i < palleteSize - 1; i++) {
-	                var thisColor = pallete[i];
-	                var position = state.cache[i] + stretch;
-	
-	                for (var j = -DIFFUSE_WIDTH + 1; j < DIFFUSE_WIDTH; j++) {
-	                    var k = (j + position + led_count) % led_count;
-	                    // Use GetPixel/SetPixel on arduino
-	                    led_array[k] = blendA(led_array[k], thisColor, alpha_level(Math.abs(j)));
-	                }
-	            }
-	
-	            for (var i = 0; i < led_count; i++) {
-	                setColor(i, led_array[i]);
-	            }
-	        },
-	        twinkle: function twinkle(state) {
-	            var normal = last;
-	            var brightness = max(normal.r, normal.g, normal.b);
-	            if (brightness == 0xFF) {
-	                state.done = true;
-	                // can't do brighter than max....
-	                return;
-	            }
-	            var twinkleVal = 0xFF >> 1;
-	            var difference = 0xFF - brightness;
-	
-	            if (!state.setup) {
-	                state.setup = true;
-	                state.cache = [];
-	                for (var i = 0; i < led_count; i++) {
-	                    state.cache[i] = 0;
-	                }
-	            }
-	            var newTwinkles = 0;
-	            if (0 === random(0, 7)) {
-	                newTwinkles = random(0, Math.ceil(led_count * .02 + 1));
-	            }
-	
-	            for (var i = 0; i < newTwinkles; i++) {
-	                var nextTwinkle = random(0, led_count);
-	                if (state.cache[nextTwinkle] === 0) {
-	                    state.cache[nextTwinkle] = twinkleVal;
-	                }
-	            }
-	
-	            for (var i = 0; i < led_count; i++) {
-	                if (state.cache[i] > 0) {
-	                    state.cache[i] -= 2;
-	                } else {
-	                    state.cache[i] = 0;
-	                }
-	            }
-	            for (var i = 0; i < led_count; i++) {
-	                var entry = normal;
-	                if (state.cache[i] > 0 && !(random(0, 20) === 0)) {
-	
-	                    entry = changeBrightness(normal, brightness + Math.ceil(state.cache[i] / twinkleVal * difference));
-	                }
-	                (0, _jquery2.default)('#pix-' + i).css('background-color', 'rgb(' + entry.r + ',' + entry.g + ',' + entry.b + ')');
-	            }
-	        },
-	        fade: function fade(state) {
-	            var frameCount = 20;
-	
-	            if (!state.toColor) {
-	                var red = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-red')).val(),
-	                    green = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-green')).val(),
-	                    blue = (0, _jquery2.default)('input', (0, _jquery2.default)('#color-blue')).val();
-	                state.fromColor = last;
-	                state.currentColor = last;
-	                state.toColor = {
-	                    r: parseInt(red),
-	                    g: parseInt(green),
-	                    b: parseInt(blue)
-	                };
-	                state.steps = {
-	                    rStep: Math.round((state.toColor.r - last.r) / frameCount),
-	                    gStep: Math.round((state.toColor.g - last.g) / frameCount),
-	                    bStep: Math.round((state.toColor.b - last.b) / frameCount)
-	                };
-	            }
-	            // function setColor(color) {
-	            //     $('.pixel').css('background-color', 'rgb('+ color.r+','+ color.g+','+ color.b+')');
-	            //     last = color;
-	            // }
-	            if (state.frameNum < frameCount - 1) {
-	                state.currentColor = {
-	                    r: state.currentColor.r + state.steps.rStep,
-	                    g: state.currentColor.g + state.steps.gStep,
-	                    b: state.currentColor.b + state.steps.bStep
-	                };
-	                setColor(state.currentColor);
-	            } else {
-	                setColor(state.toColor);
-	                state.done = true;
-	            }
-	        }
-	    }
-	};
-	
-	(0, _jquery2.default)(document).ready(function () {
-	    var domElement = document.getElementById('undercabinet-light-control');
-	    if (domElement) {
-	        ReactDOM.render(React.createElement(
-	            _MuiThemeProvider2.default,
-	            { muiTheme: (0, _getMuiTheme2.default)() },
-	            React.createElement(_undercabinetLightControl2.default, null)
-	        ), domElement);
-	    }
-	
-	    //undercabinet.hookupEvents();
-	    //setTimeout(undercabinet.pullCurrentState, 2000);
-	});
-	
-	module.exports = undercabinet;
-
-/***/ },
-/* 615 */
-/*!****************************************!*\
-  !*** ./resources/js/app/helper/fft.js ***!
-  \****************************************/
-/***/ function(module, exports) {
-
-	'use strict';
-	
-	var e = Math.E;
-	var pi = Math.PI;
-	var twoPi = Math.PI * 2;
-	
-	/*
-	basic complex number arithmetic from 
-	http://rosettacode.org/wiki/Fast_Fourier_transform#Scala
-	*/
-	function Complex(re, im) {
-	    this.re = re;
-	    this.im = im || 0.0;
-	}
-	Complex.prototype.add = function (other, dst) {
-	    dst.re = this.re + other.re;
-	    dst.im = this.im + other.im;
-	    return dst;
-	};
-	Complex.prototype.sub = function (other, dst) {
-	    dst.re = this.re - other.re;
-	    dst.im = this.im - other.im;
-	    return dst;
-	};
-	Complex.prototype.mul = function (other, dst) {
-	    //cache re in case dst === this
-	    var r = this.re * other.re - this.im * other.im;
-	    dst.im = this.re * other.im + this.im * other.re;
-	    dst.re = r;
-	    return dst;
-	};
-	Complex.prototype.cexp = function (dst) {
-	    var er = Math.exp(this.re);
-	    dst.re = er * Math.cos(this.im);
-	    dst.im = er * Math.sin(this.im);
-	    return dst;
-	};
-	Complex.prototype.log = function () {
-	    /*
-	    although 'It's just a matter of separating out the real and imaginary parts of jw.' is not a helpful quote
-	    the actual formula I found here and the rest was just fiddling / testing and comparing with correct results.
-	    http://cboard.cprogramming.com/c-programming/89116-how-implement-complex-exponential-functions-c.html#post637921
-	    */
-	    if (!this.re) console.log(this.im.toString() + 'j');else if (this.im < 0) console.log(this.re.toString() + this.im.toString() + 'j');else console.log(this.re.toString() + '+' + this.im.toString() + 'j');
-	};
-	
-	var fft = {
-	    doFft: function doFft(samples, length) {
-	        var twoPiDiv = twoPi / length;
-	        var fq = [];
-	        var cos = [];
-	        var sin = [];
-	
-	        for (var k = 0; k < length / 2; k++) {
-	            for (var n = 0; n < length; n++) {
-	                var trigComp = -twoPiDiv * k * n;
-	                sin[k] = (sin[k] || 0) + samples[n] * Math.sin(trigComp);
-	                cos[k] = (cos[k] || 0) + samples[n] * Math.cos(trigComp);
-	            }
-	            fq[k] = Math.sqrt(Math.pow(sin[k], 2) + Math.pow(cos[k], 2));
-	        }
-	        fq[0] = 0;
-	        return fq;
-	    },
-	    cfft: function cfft(amplitudes) {
-	        var N = amplitudes.length;
-	        if (N <= 1) return amplitudes;
-	
-	        var hN = N / 2;
-	        var even = [];
-	        var odd = [];
-	
-	        even.length = hN;
-	        odd.length = hN;
-	
-	        for (var i = 0; i < hN; ++i) {
-	            even[i] = amplitudes[i * 2];
-	            odd[i] = amplitudes[i * 2 + 1];
-	        }
-	        even = fft.cfft(even);
-	        odd = fft.cfft(odd);
-	
-	        var twiddle = -2 * Math.PI;
-	        for (var k = 0; k < hN; ++k) {
-	            if (!(even[k] instanceof Complex)) even[k] = new Complex(even[k], 0);
-	            if (!(odd[k] instanceof Complex)) odd[k] = new Complex(odd[k], 0);
-	
-	            var div = k / N;
-	            var t = new Complex(0, twiddle * div);
-	
-	            t.cexp(t).mul(odd[k], t);
-	
-	            amplitudes[k] = even[k].add(t, odd[k]);
-	            amplitudes[k + hN] = even[k].sub(t, even[k]);
-	        }
-	        return amplitudes;
-	    },
-	    realFft: function realFft(S, start, length, stride, X) {
-	        // X0,...,N−1 ← ditfft2(x, N, s):             DFT of (x0, xs, x2s, ..., x(N-1)s):
-	        // if N = 1 then
-	        //     X0 ← x0                                      trivial size-1 DFT base case
-	        // else
-	        //     X0,...,N/2−1 ← ditfft2(x, N/2, 2s)             DFT of (x0, x2s, x4s, ...)
-	        //     XN/2,...,N−1 ← ditfft2(x+s, N/2, 2s)           DFT of (xs, xs+2s, xs+4s, ...)
-	        //     for k = 0 to N/2−1                           combine DFTs of two halves into full DFT:
-	        //         t ← Xk
-	        //         Xk ← t + exp(−2πi k/N) Xk+N/2
-	        //         Xk+N/2 ← t − exp(−2πi k/N) Xk+N/2
-	        //     endfor
-	        // endif        
-	        if (length === 1) {
-	            X[start].re = S[start];
-	            X[start].im = S[start];
-	            return;
-	        }
-	
-	        var negTwoPiDiv = -twoPi / length;
-	        var halfLen = length / 2;
-	
-	        fft.realFft(S, start, halfLen, stride * 2, X);
-	        fft.realFft(S, start + stride, halfLen, stride * 2, X);
-	
-	        for (var k = 0; k < halfLen; k++) {
-	            var shifted = k * stride + start;
-	            var t = X[shifted];
-	            var x1re = Math.sin(negTwoPiDiv * k) * X[shifted + halfLen].re;
-	            var x1im = Math.cos(negTwoPiDiv * k) * X[shifted + halfLen].im;
-	
-	            // k00 = start + k*stride;    
-	            // k01 = k00 + halfLen*stride;
-	
-	            // k10 = start + 2*k*stride;  
-	            // k11 = k10 + stride;
-	
-	            // cs = cos(TWO_PI*k/(double)N); sn = sin(TWO_PI*k/(double)N);
-	            // tmp0 = cs * XX[k11][0] + sn * XX[k11][1];
-	            // tmp1 = cs * XX[k11][1] - sn * XX[k11][0];
-	
-	            // X[k01][0] = XX[k10][0] - tmp0;
-	            // X[k01][1] = XX[k10][1] - tmp1;
-	
-	            // X[k00][0] = XX[k10][0] + tmp0;
-	            //X[k00][1] = XX[k10][1] + tmp1
-	
-	            X[shifted] = {
-	                re: t.re + x1re,
-	                im: t.im + x1im
-	            };
-	            X[shifted + halfLen] = {
-	                re: t.re - x1re,
-	                im: t.im - x1im
-	            };
-	        }
-	        return X;
-	    },
-	    OtherFft: function OtherFft(S, start, length, stride) {
-	
-	        // X0,...,N−1 ← ditfft2(x, N, s):             DFT of (x0, xs, x2s, ..., x(N-1)s):
-	        // if N = 1 then
-	        //     X0 ← x0                                      trivial size-1 DFT base case
-	        // else
-	        //     X0,...,N/2−1 ← ditfft2(x, N/2, 2s)             DFT of (x0, x2s, x4s, ...)
-	        //     XN/2,...,N−1 ← ditfft2(x+s, N/2, 2s)           DFT of (xs, xs+2s, xs+4s, ...)
-	        //     for k = 0 to N/2−1                           combine DFTs of two halves into full DFT:
-	        //         t ← Xk
-	        //         Xk ← t + exp(−2πi k/N) Xk+N/2
-	        //         Xk+N/2 ← t − exp(−2πi k/N) Xk+N/2
-	        //     endfor
-	        // endif
-	
-	        if (length === 1) {
-	            return [{ re: S[start], im: S[start] }];
-	        }
-	
-	        var negTwoPiDiv = -twoPi / length;
-	        var halfLen = length / 2;
-	
-	        var first = fft.realFft(S, start, halfLen, stride * 2);
-	        var second = fft.realFft(S, start + stride, halfLen, stride * 2);
-	        var X = [];
-	
-	        for (var k = 0; k < halfLen; k++) {
-	
-	            var t = first[k];
-	
-	            x1re = Math.sin(negTwoPiDiv * k) * second[k].re;
-	            x1im = Math.cos(negTwoPiDiv * k) * second[k].im;
-	
-	            X[k] = {
-	                re: (t.re || 0) + x1re,
-	                im: (t.im || 0) + x1im
-	            };
-	            X[k + halfLen] = {
-	                re: (t.re || 0) - x1re,
-	                im: (t.im || 0) - x1im
-	            };
-	        }
-	        return X;
-	    }
-	};
-	
-	module.exports = fft;
-
-/***/ },
-/* 616 */
-/*!*************************************************************!*\
-  !*** ./resources/js/components/undercabinetLightControl.js ***!
-  \*************************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _react = __webpack_require__(/*! react */ 3);
-	
-	var _react2 = _interopRequireDefault(_react);
-	
-	var _roomStateSettings = __webpack_require__(/*! ./roomStateSettings */ 617);
-	
-	var _roomStateSettings2 = _interopRequireDefault(_roomStateSettings);
-	
-	var _Tabs = __webpack_require__(/*! material-ui/Tabs */ 402);
-	
-	var _Tabs2 = _interopRequireDefault(_Tabs);
-	
-	var _Tab = __webpack_require__(/*! material-ui/Tabs/Tab */ 403);
-	
-	var _Tab2 = _interopRequireDefault(_Tab);
-	
-	var _TextField = __webpack_require__(/*! material-ui/TextField */ 414);
-	
-	var _TextField2 = _interopRequireDefault(_TextField);
-	
-	var _reactTapEventPlugin = __webpack_require__(/*! react-tap-event-plugin */ 696);
-	
-	var _reactTapEventPlugin2 = _interopRequireDefault(_reactTapEventPlugin);
-	
-	var _ajax = __webpack_require__(/*! ../app/ajax */ 438);
-	
-	var _ajax2 = _interopRequireDefault(_ajax);
-	
-	var _jquery = __webpack_require__(/*! jquery */ 2);
-	
-	var _jquery2 = _interopRequireDefault(_jquery);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	(0, _reactTapEventPlugin2.default)();
-	
-	var rssStyle = {
-	    width: '200px',
-	    float: 'left'
-	};
-	
-	var defaultOccupied = {
-	    brightness: 3,
-	    animation: 2,
-	    transition: 1,
-	    color: 2314241
-	};
-	
-	var UndercabinetLightControl = function (_React$Component) {
-	    _inherits(UndercabinetLightControl, _React$Component);
-	
-	    function UndercabinetLightControl(props) {
-	        _classCallCheck(this, UndercabinetLightControl);
-	
-	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(UndercabinetLightControl).call(this, props));
-	
-	        _this.state = {
-	            value: 'occupied'
-	        };
-	
-	        _this.handleChange = _this.handleChange.bind(_this);
-	        return _this;
-	    }
-	
-	    _createClass(UndercabinetLightControl, [{
-	        key: 'sendUpdate',
-	        value: function sendUpdate(newState) {
-	            var payload = {
-	                color: (newState.occupied || {}).color || 0,
-	                options: {
-	                    occupied: newState.occupied,
-	                    unoccupied: newState.unoccupied
-	                }
-	            };
-	
-	            _ajax2.default.post('/undercabinet/changeOptions', JSON.stringify(payload), {
-	                contentType: "application/json; charset=utf-8" });
-	        }
-	
-	        // getInitialState() {
-	        //     return {
-	
-	        //     };
-	        // }
-	
-	
-	    }, {
-	        key: 'componentDidMount',
-	        value: function componentDidMount() {
-	            var component = this;
-	            this.serverRequest = _ajax2.default.post('/undercabinet/getState', '').then(function (resp) {
-	
-	                // var newState = {
-	                //     pirTimeout: 2700,
-	                //     unoccupied: resp.options.unoccupied,
-	                //     occupied: resp.options.occupied
-	                // };
-	
-	                // newState.unoccupied.color = resp.color;
-	                // newState.unoccupied.pallete = resp.pallete;
-	
-	                // newState.occupied.color = resp.color;
-	                // newState.occupied.pallete = resp.pallete;
-	
-	                component.setState(resp.options);
-	            }, function _fail() {
-	                // statusBox.addClass('error-message');
-	                // statusBox.text("Failed polling device... Yell at Joe!");
-	                // statusBox.show();
-	            });
-	
-	            // this.serverRequest = $.get(this.props.source, function (result) {
-	            //     var lastGist = result[0];
-	            //     this.setState({
-	            //         username: lastGist.owner.login,
-	            //         lastGistUrl: lastGist.html_url
-	            //     });
-	            // }.bind(this));
-	        }
-	    }, {
-	        key: 'updateRoomSettings',
-	        value: function updateRoomSettings(name) {
-	            return function (key, value) {
-	                if (!this.state[name]) {
-	                    this.state[name] = {};
-	                }
-	                var settings = this.state[name];
-	                settings[key] = value;
-	                this.sendUpdate(this.state);
-	
-	                var update = {};
-	                update[name] = settings;
-	                this.setState(update);
-	            };
-	        }
-	    }, {
-	        key: 'componentWillUnmount',
-	        value: function componentWillUnmount() {
-	            this.serverRequest.abort();
-	        }
-	    }, {
-	        key: 'handleChange',
-	        value: function handleChange(value) {
-	            this.setState({
-	                value: value
-	            });
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render() {
-	            var divStyle = {
-	                marginTop: '20px'
-	            };
-	            return _react2.default.createElement(
-	                'div',
-	                null,
-	                _react2.default.createElement(
-	                    _Tabs2.default,
-	                    { value: this.state.value, onChange: this.handleChange },
-	                    _react2.default.createElement(
-	                        _Tab2.default,
-	                        { label: 'Occupied', value: 'occupied' },
-	                        _react2.default.createElement(
-	                            'div',
-	                            { style: divStyle },
-	                            _react2.default.createElement(_roomStateSettings2.default, {
-	                                data: this.state.occupied,
-	                                updateValue: this.updateRoomSettings('occupied').bind(this) })
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        _Tab2.default,
-	                        { label: 'UnOccupied', value: 'unoccupied' },
-	                        _react2.default.createElement(
-	                            'div',
-	                            { style: divStyle },
-	                            _react2.default.createElement(_roomStateSettings2.default, {
-	                                data: this.state.unoccupied,
-	                                updateValue: this.updateRoomSettings('unoccupied').bind(this) })
-	                        )
-	                    )
-	                )
-	            );
-	        }
-	    }]);
-	
-	    return UndercabinetLightControl;
-	}(_react2.default.Component);
-	
-	exports.default = UndercabinetLightControl;
-
-/***/ },
-/* 617 */
-/*!******************************************************!*\
-  !*** ./resources/js/components/roomStateSettings.js ***!
-  \******************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _react = __webpack_require__(/*! react */ 3);
-	
-	var _react2 = _interopRequireDefault(_react);
-	
-	var _ramda = __webpack_require__(/*! ramda */ 467);
-	
-	var _ramda2 = _interopRequireDefault(_ramda);
-	
-	var _pallete = __webpack_require__(/*! ./pallete */ 618);
-	
-	var _pallete2 = _interopRequireDefault(_pallete);
-	
-	var _Slider = __webpack_require__(/*! material-ui/Slider */ 619);
-	
-	var _Slider2 = _interopRequireDefault(_Slider);
-	
-	var _SelectField = __webpack_require__(/*! material-ui/SelectField */ 453);
-	
-	var _SelectField2 = _interopRequireDefault(_SelectField);
-	
-	var _MenuItem = __webpack_require__(/*! material-ui/MenuItem */ 223);
-	
-	var _MenuItem2 = _interopRequireDefault(_MenuItem);
-	
-	var _reactColor = __webpack_require__(/*! react-color */ 621);
-	
-	var _reactModal = __webpack_require__(/*! react-modal */ 676);
-	
-	var _reactModal2 = _interopRequireDefault(_reactModal);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var animations = [{ value: 0, text: 'None' }, { value: 1, text: 'Color motion' }, { value: 2, text: 'Twinkle' }, { value: 3, text: 'Rainbow' }, { value: 4, text: 'Runner' }, { value: 5, text: 'Discrete' }, { value: 6, text: 'Fire' }, { value: 7, text: 'Frequency' }];
-	
-	var transitions = [{ value: 0, text: 'None' }, { value: 1, text: 'Fade' }, { value: 2, text: 'Pixelate' }];
-	
-	function createPropSetter(propName) {
-	    return function (e, value) {
-	        var obj = {};
-	
-	        // hack.
-	        if (propName === 'color') {
-	            value = transformRgbToColor(value);
-	        }
-	
-	        obj[propName] = value;
-	        this.setState(obj);
-	        this.props.updateValue(propName, value);
-	    };
-	}
-	
-	function transformRgbToColor(color) {
-	    var rgb = color.rgb;
-	
-	    return rgb.r << 16 | rgb.g << 8 | rgb.b;
-	}
-	
-	var RoomStateSettings = function (_React$Component) {
-	    _inherits(RoomStateSettings, _React$Component);
-	
-	    function RoomStateSettings(props) {
-	        _classCallCheck(this, RoomStateSettings);
-	
-	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(RoomStateSettings).call(this, props));
-	
-	        _this.state = {
-	            brightness: 4,
-	            animation: 4,
-	            transition: 1,
-	            displayColorPicker: false
-	        };
-	        _this.colorSelect = _this.colorSelect.bind(_this);
-	        _this.colorClick = _this.colorClick.bind(_this);
-	        _this.colorClose = _this.colorClose.bind(_this);
-	        return _this;
-	    }
-	
-	    // handleBrightnessChange(value) {
-	
-	    // }
-	    // handleAnimationChange(){}
-	    // handleTransitionChange
-	
-	
-	    _createClass(RoomStateSettings, [{
-	        key: 'colorSelect',
-	        value: function colorSelect(value) {
-	            value = transformRgbToColor(value);
-	
-	            this.setState({ color: value });
-	        }
-	    }, {
-	        key: 'colorClick',
-	        value: function colorClick() {
-	            this.setState({ displayColorPicker: !this.state.displayColorPicker });
-	        }
-	    }, {
-	        key: 'colorClose',
-	        value: function colorClose() {
-	            this.setState({ displayColorPicker: false });
-	
-	            this.props.updateValue('color', this.state.color);
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render() {
-	            _reactModal2.default.setAppElement(document.body);
-	            var data = this.props.data || {};
-	            var decColor = this.state.color || data.color || 0;
-	
-	            var color = {
-	                r: decColor >> 16,
-	                g: decColor >> 8 & 0xFF,
-	                b: decColor & 0xFF
-	            };
-	
-	            var minMax = function minMax(min, max, value) {
-	                return value < min ? 0 : value > max ? max : value;
-	            };
-	
-	            var s = {
-	                label: {
-	                    //display: 'table-cell', 
-	                    //width: '120px', 
-	                    textAlign: 'right',
-	                    verticalAlign: 'top',
-	                    paddingTop: '15px'
-	                },
-	                control: {
-	                    //display: 'table-cell' 
-	
-	                },
-	                row: {
-	                    //display: 'table-row' 
-	                },
-	                section: { float: 'left' },
-	                color: {
-	                    width: '70px',
-	                    height: '45px',
-	                    borderRadius: '4px',
-	                    background: 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')'
-	                },
-	                swatch: {
-	                    padding: '5px',
-	                    background: '#fff',
-	                    borderRadius: '1px',
-	                    boxShadow: '0 0 0 1px rgba(0,0,0,.1)',
-	                    display: 'inline-block',
-	                    cursor: 'pointer'
-	                },
-	                modal: {
-	                    overlay: {
-	                        position: 'fixed',
-	                        top: '0px',
-	                        left: '0px',
-	                        right: '0px',
-	                        bottom: '0px',
-	                        backgroundColor: 'rgba(255, 255, 255, 0.75)',
-	                        zIndex: 3
-	                    },
-	                    content: {
-	                        border: '0px',
-	                        padding: '10px',
-	                        backgroundColor: 'rgba(255, 255, 255, 0.0)',
-	                        top: '90px',
-	                        right: '60px',
-	                        bottom: 'auto',
-	                        left: 'auto'
-	                        //boxShadow: '0 2px 10px rgba(0,0,0,.12), 0 2px 5px rgba(0,0,0,.16)'
-	                    }
-	                }
-	            };
-	
-	            return _react2.default.createElement(
-	                'div',
-	                { className: 'container-fluid' },
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'row' },
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'col-sm-6' },
-	                        _react2.default.createElement(
-	                            'div',
-	                            { style: s.row, className: 'row' },
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.label, className: 'col-xs-4' },
-	                                'Color'
-	                            ),
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.control, className: 'col-xs-8' },
-	                                _react2.default.createElement(
-	                                    'div',
-	                                    { style: s.swatch, onClick: this.colorClick },
-	                                    _react2.default.createElement('div', { style: s.color })
-	                                ),
-	                                _react2.default.createElement(
-	                                    _reactModal2.default,
-	                                    {
-	                                        isOpen: this.state.displayColorPicker,
-	                                        onRequestClose: this.colorClose,
-	                                        style: s.modal },
-	                                    _react2.default.createElement(
-	                                        'div',
-	                                        null,
-	                                        _react2.default.createElement(_reactColor.SketchPicker, {
-	                                            color: color,
-	                                            onChangeComplete: this.colorSelect,
-	                                            type: 'sketch'
-	                                        })
-	                                    )
-	                                )
-	                            )
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        'div',
-	                        { className: 'col-sm-6' },
-	                        _react2.default.createElement(
-	                            'div',
-	                            { style: s.row, className: 'row' },
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.label, className: 'col-xs-4' },
-	                                'Brightness'
-	                            ),
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.control, className: 'col-xs-8' },
-	                                _react2.default.createElement(_Slider2.default, {
-	                                    value: minMax(0, 15, data.brightness),
-	                                    min: 0,
-	                                    max: 15,
-	                                    step: 1,
-	                                    onChange: createPropSetter('brightness').bind(this) })
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            'div',
-	                            { style: s.row, className: 'row' },
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.label, className: 'col-xs-4' },
-	                                'Animation'
-	                            ),
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.control, className: 'col-xs-8' },
-	                                _react2.default.createElement(
-	                                    _SelectField2.default,
-	                                    {
-	                                        fullWidth: true,
-	                                        value: data.animation,
-	                                        onChange: createPropSetter('animation').bind(this)
-	                                    },
-	                                    animations.map(function (animation) {
-	                                        return _react2.default.createElement(_MenuItem2.default, { key: animation.value, value: animation.value, primaryText: animation.text });
-	                                    })
-	                                )
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            'div',
-	                            { style: s.row, className: 'row' },
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.label, className: 'col-xs-4' },
-	                                'Transition'
-	                            ),
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.control, className: 'col-xs-8' },
-	                                _react2.default.createElement(
-	                                    _SelectField2.default,
-	                                    {
-	                                        fullWidth: true,
-	                                        value: data.transition,
-	                                        onChange: createPropSetter('transition').bind(this)
-	                                    },
-	                                    transitions.map(function (transition) {
-	                                        return _react2.default.createElement(_MenuItem2.default, { key: transition.value, value: transition.value, primaryText: transition.text });
-	                                    })
-	                                )
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            'div',
-	                            { style: s.row, className: 'row' },
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.label, className: 'col-xs-4' },
-	                                'Pattern'
-	                            ),
-	                            _react2.default.createElement(
-	                                'div',
-	                                { style: s.control, className: 'col-xs-8' },
-	                                _react2.default.createElement(_pallete2.default, {
-	                                    pallete: data.pallete,
-	                                    updateValue: createPropSetter('pallete').bind(this)
-	                                })
-	                            )
-	                        )
-	                    )
-	                )
-	            );
-	
-	            // return (
-	            //     <div>
-	            //         <div style={s.section}>
-	            //             Ambient Color: 
-	            //             <div style={s.swatch} onClick={ this.colorClick }>
-	            //                 <div style={s.color} />
-	            //             </div>
-	            //             <Modal
-	            //                 isOpen={this.state.displayColorPicker}
-	            //                 onRequestClose={this.colorClose}
-	            //                 style={s.modal} >
-	            //                 <ColorPicker 
-	            //                     type="sketch" 
-	            //                     color={ color }
-	            //                     onClose={ this.colorClose }
-	            //                     onChangeComplete={ this.colorSelect }/>
-	            //             </Modal>
-	            //         </div>
-	            //         <div style={s.section}>
-	            //             <div style={s.row}>
-	            //                 <div style={s.label}>Brightness</div>
-	            //                 <div style={s.control}><Slider
-	            //                         value={minMax(0, 15, data.brightness)}
-	            //                         min={0}
-	            //                         max={15}
-	            //                         step={1}
-	            //                         onChange={createPropSetter('brightness').bind(this)}/></div>
-	            //             </div> 
-	            //             <div style={s.row}>
-	            //                 <div style={s.label}>Animation</div>
-	            //                 <div style={s.control}><SelectField
-	            //                         value={data.animation}
-	            //                         onChange={createPropSetter('animation').bind(this)}
-	            //                     >{animations}
-	            //                     </SelectField>
-	            //                 </div>
-	            //             </div>
-	
-	            //             <div style={s.row}>
-	            //                 <div style={s.label}>trvansition</div>
-	            //                 <div style={s.control}><SelectField
-	            //                         value={data.transition}
-	            //                         onChange={createPropSetter('divansition').bind(this)}
-	            //                     >{transitions}
-	            //                     </SelectField>
-	            //                 </div>
-	            //             </div>
-	            //         </div>
-	            //     </div>  
-	            // ); 
-	        }
-	    }]);
-	
-	    return RoomStateSettings;
-	}(_react2.default.Component);
-	
-	exports.default = RoomStateSettings;
-
-/***/ },
-/* 618 */
+/* 472 */
 /*!********************************************!*\
   !*** ./resources/js/components/pallete.js ***!
   \********************************************/
@@ -84778,7 +84650,7 @@
 	exports.default = Pallete;
 
 /***/ },
-/* 619 */
+/* 473 */
 /*!***********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/material-ui/Slider/index.js ***!
   \***********************************************************/
@@ -84791,7 +84663,7 @@
 	});
 	exports.default = undefined;
 	
-	var _Slider = __webpack_require__(/*! ./Slider */ 620);
+	var _Slider = __webpack_require__(/*! ./Slider */ 474);
 	
 	var _Slider2 = _interopRequireDefault(_Slider);
 	
@@ -84800,7 +84672,7 @@
 	exports.default = _Slider2.default;
 
 /***/ },
-/* 620 */
+/* 474 */
 /*!************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/material-ui/Slider/Slider.js ***!
   \************************************************************/
@@ -85627,7 +85499,7 @@
 	exports.default = Slider;
 
 /***/ },
-/* 621 */
+/* 475 */
 /*!********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/index.js ***!
   \********************************************************/
@@ -85640,7 +85512,7 @@
 	});
 	exports.default = exports.CustomPicker = exports.SwatchesPicker = exports.SliderPicker = exports.SketchPicker = exports.PhotoshopPicker = exports.MaterialPicker = exports.CompactPicker = exports.ChromePicker = undefined;
 	
-	var _Chrome = __webpack_require__(/*! ./components/chrome/Chrome */ 622);
+	var _Chrome = __webpack_require__(/*! ./components/chrome/Chrome */ 476);
 	
 	Object.defineProperty(exports, 'ChromePicker', {
 	  enumerable: true,
@@ -85649,7 +85521,7 @@
 	  }
 	});
 	
-	var _Compact = __webpack_require__(/*! ./components/compact/Compact */ 650);
+	var _Compact = __webpack_require__(/*! ./components/compact/Compact */ 504);
 	
 	Object.defineProperty(exports, 'CompactPicker', {
 	  enumerable: true,
@@ -85658,7 +85530,7 @@
 	  }
 	});
 	
-	var _Material = __webpack_require__(/*! ./components/material/Material */ 660);
+	var _Material = __webpack_require__(/*! ./components/material/Material */ 514);
 	
 	Object.defineProperty(exports, 'MaterialPicker', {
 	  enumerable: true,
@@ -85667,7 +85539,7 @@
 	  }
 	});
 	
-	var _Photoshop = __webpack_require__(/*! ./components/photoshop/Photoshop */ 661);
+	var _Photoshop = __webpack_require__(/*! ./components/photoshop/Photoshop */ 515);
 	
 	Object.defineProperty(exports, 'PhotoshopPicker', {
 	  enumerable: true,
@@ -85676,7 +85548,7 @@
 	  }
 	});
 	
-	var _Sketch = __webpack_require__(/*! ./components/sketched/Sketch */ 665);
+	var _Sketch = __webpack_require__(/*! ./components/sketched/Sketch */ 519);
 	
 	Object.defineProperty(exports, 'SketchPicker', {
 	  enumerable: true,
@@ -85685,7 +85557,7 @@
 	  }
 	});
 	
-	var _Slider = __webpack_require__(/*! ./components/slider/Slider */ 668);
+	var _Slider = __webpack_require__(/*! ./components/slider/Slider */ 522);
 	
 	Object.defineProperty(exports, 'SliderPicker', {
 	  enumerable: true,
@@ -85694,7 +85566,7 @@
 	  }
 	});
 	
-	var _Swatches = __webpack_require__(/*! ./components/swatches/Swatches */ 672);
+	var _Swatches = __webpack_require__(/*! ./components/swatches/Swatches */ 526);
 	
 	Object.defineProperty(exports, 'SwatchesPicker', {
 	  enumerable: true,
@@ -85703,7 +85575,7 @@
 	  }
 	});
 	
-	var _ColorWrap = __webpack_require__(/*! ./components/common/ColorWrap */ 643);
+	var _ColorWrap = __webpack_require__(/*! ./components/common/ColorWrap */ 497);
 	
 	Object.defineProperty(exports, 'CustomPicker', {
 	  enumerable: true,
@@ -85719,7 +85591,7 @@
 	exports.default = _Chrome2.default;
 
 /***/ },
-/* 622 */
+/* 476 */
 /*!***************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/chrome/Chrome.js ***!
   \***************************************************************************/
@@ -85739,25 +85611,25 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
-	var _ChromeFields = __webpack_require__(/*! ./ChromeFields */ 647);
+	var _ChromeFields = __webpack_require__(/*! ./ChromeFields */ 501);
 	
 	var _ChromeFields2 = _interopRequireDefault(_ChromeFields);
 	
-	var _ChromePointer = __webpack_require__(/*! ./ChromePointer */ 648);
+	var _ChromePointer = __webpack_require__(/*! ./ChromePointer */ 502);
 	
 	var _ChromePointer2 = _interopRequireDefault(_ChromePointer);
 	
-	var _ChromePointerCircle = __webpack_require__(/*! ./ChromePointerCircle */ 649);
+	var _ChromePointerCircle = __webpack_require__(/*! ./ChromePointerCircle */ 503);
 	
 	var _ChromePointerCircle2 = _interopRequireDefault(_ChromePointerCircle);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -85909,34 +85781,34 @@
 	exports.default = (0, _common.ColorWrap)(Chrome);
 
 /***/ },
-/* 623 */
+/* 477 */
 /*!*********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/reactcss/lib/react-css.js ***!
   \*********************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";module.exports={Component:__webpack_require__(/*! ./Component */ 624),inline:__webpack_require__(/*! ./inline */ 625),mixin:{css:__webpack_require__(/*! ./inline */ 625)}};
+	"use strict";module.exports={Component:__webpack_require__(/*! ./Component */ 478),inline:__webpack_require__(/*! ./inline */ 479),mixin:{css:__webpack_require__(/*! ./inline */ 479)}};
 
 /***/ },
-/* 624 */
+/* 478 */
 /*!*********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/reactcss/lib/Component.js ***!
   \*********************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";function _classCallCheck(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}function _possibleConstructorReturn(e,t){if(!e)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return!t||"object"!=typeof t&&"function"!=typeof t?e:t}function _inherits(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function, not "+typeof t);e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,enumerable:!1,writable:!0,configurable:!0}}),t&&(Object.setPrototypeOf?Object.setPrototypeOf(e,t):e.__proto__=t)}var _createClass=function(){function e(e,t){for(var n=0;n<t.length;n++){var r=t[n];r.enumerable=r.enumerable||!1,r.configurable=!0,"value"in r&&(r.writable=!0),Object.defineProperty(e,r.key,r)}}return function(t,n,r){return n&&e(t.prototype,n),r&&e(t,r),t}}(),React=__webpack_require__(/*! react */ 3),inline=__webpack_require__(/*! ./inline */ 625),ReactCSSComponent=function(e){function t(){return _classCallCheck(this,t),_possibleConstructorReturn(this,Object.getPrototypeOf(t).apply(this,arguments))}return _inherits(t,e),_createClass(t,[{key:"css",value:function(e){return inline.call(this,e)}},{key:"styles",value:function(){return this.css()}}]),t}(React.Component);ReactCSSComponent.contextTypes={mixins:React.PropTypes.object},module.exports=ReactCSSComponent;
+	"use strict";function _classCallCheck(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}function _possibleConstructorReturn(e,t){if(!e)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return!t||"object"!=typeof t&&"function"!=typeof t?e:t}function _inherits(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function, not "+typeof t);e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,enumerable:!1,writable:!0,configurable:!0}}),t&&(Object.setPrototypeOf?Object.setPrototypeOf(e,t):e.__proto__=t)}var _createClass=function(){function e(e,t){for(var n=0;n<t.length;n++){var r=t[n];r.enumerable=r.enumerable||!1,r.configurable=!0,"value"in r&&(r.writable=!0),Object.defineProperty(e,r.key,r)}}return function(t,n,r){return n&&e(t.prototype,n),r&&e(t,r),t}}(),React=__webpack_require__(/*! react */ 3),inline=__webpack_require__(/*! ./inline */ 479),ReactCSSComponent=function(e){function t(){return _classCallCheck(this,t),_possibleConstructorReturn(this,Object.getPrototypeOf(t).apply(this,arguments))}return _inherits(t,e),_createClass(t,[{key:"css",value:function(e){return inline.call(this,e)}},{key:"styles",value:function(){return this.css()}}]),t}(React.Component);ReactCSSComponent.contextTypes={mixins:React.PropTypes.object},module.exports=ReactCSSComponent;
 
 /***/ },
-/* 625 */
+/* 479 */
 /*!******************************************************!*\
   !*** C:/source/GitHub/HIoS/~/reactcss/lib/inline.js ***!
   \******************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";var isObject=__webpack_require__(/*! lodash.isobject */ 626),checkClassStructure=__webpack_require__(/*! ./check-class-structure */ 627),combine=__webpack_require__(/*! ./combine */ 628);module.exports=function(s){var e=this;combine=__webpack_require__(/*! ./combine */ 628);var t=[];this.classes||console.warn("Define this.classes on `"+this.constructor.name+"`"),checkClassStructure(this.classes&&this.classes());var r=function(s,r){e.classes&&e.classes()[s]?t.push(e.classes()[s]):s&&r&&r.warn===!0&&console.warn("The `"+s+"` css class does not exist on `"+e.constructor.name+"`")};r("default");for(var c in this.props){var i=this.props[c];isObject(i)||(i===!0?(r(c),r(c+"-true")):r(i?c+"-"+i:c+"-false"))}if(this.props&&this.props.activeBounds)for(var o=0;o<this.props.activeBounds.length;o++){var n=this.props.activeBounds[o];r(n)}for(var a in s){var u=s[a];u===!0&&r(a,{warn:!0})}var h={};return this.context&&this.context.mixins&&(h=this.context.mixins),combine(t,h)};
+	"use strict";var isObject=__webpack_require__(/*! lodash.isobject */ 480),checkClassStructure=__webpack_require__(/*! ./check-class-structure */ 481),combine=__webpack_require__(/*! ./combine */ 482);module.exports=function(s){var e=this;combine=__webpack_require__(/*! ./combine */ 482);var t=[];this.classes||console.warn("Define this.classes on `"+this.constructor.name+"`"),checkClassStructure(this.classes&&this.classes());var r=function(s,r){e.classes&&e.classes()[s]?t.push(e.classes()[s]):s&&r&&r.warn===!0&&console.warn("The `"+s+"` css class does not exist on `"+e.constructor.name+"`")};r("default");for(var c in this.props){var i=this.props[c];isObject(i)||(i===!0?(r(c),r(c+"-true")):r(i?c+"-"+i:c+"-false"))}if(this.props&&this.props.activeBounds)for(var o=0;o<this.props.activeBounds.length;o++){var n=this.props.activeBounds[o];r(n)}for(var a in s){var u=s[a];u===!0&&r(a,{warn:!0})}var h={};return this.context&&this.context.mixins&&(h=this.context.mixins),combine(t,h)};
 
 /***/ },
-/* 626 */
+/* 480 */
 /*!********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.isobject/index.js ***!
   \********************************************************/
@@ -85982,34 +85854,34 @@
 
 
 /***/ },
-/* 627 */
+/* 481 */
 /*!*********************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/reactcss/lib/check-class-structure.js ***!
   \*********************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";var isObject=__webpack_require__(/*! lodash.isobject */ 626);module.exports=function(e){for(var s in e){var o=e[s];if(isObject(o))for(var t in o){var a=o[t];isObject(a)||console.warn("Make sure the value of the element `"+s+"` is an object of css. You passed it `"+o+"`")}else console.warn("Make sure the value of `"+s+"` is an object of html elements. You passed it `"+o+"`")}};
+	"use strict";var isObject=__webpack_require__(/*! lodash.isobject */ 480);module.exports=function(e){for(var s in e){var o=e[s];if(isObject(o))for(var t in o){var a=o[t];isObject(a)||console.warn("Make sure the value of the element `"+s+"` is an object of css. You passed it `"+o+"`")}else console.warn("Make sure the value of `"+s+"` is an object of html elements. You passed it `"+o+"`")}};
 
 /***/ },
-/* 628 */
+/* 482 */
 /*!*******************************************************!*\
   !*** C:/source/GitHub/HIoS/~/reactcss/lib/combine.js ***!
   \*******************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";var merge=__webpack_require__(/*! ./merge-classes */ 629),mixins=__webpack_require__(/*! ./transform-mixins */ 632);module.exports=function(e,r){var i=merge(e);return mixins(i,r)};
+	"use strict";var merge=__webpack_require__(/*! ./merge-classes */ 483),mixins=__webpack_require__(/*! ./transform-mixins */ 486);module.exports=function(e,r){var i=merge(e);return mixins(i,r)};
 
 /***/ },
-/* 629 */
+/* 483 */
 /*!*************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/reactcss/lib/merge-classes.js ***!
   \*************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";var merge=__webpack_require__(/*! merge */ 630),isObject=__webpack_require__(/*! lodash.isobject */ 626),isArray=__webpack_require__(/*! lodash.isarray */ 631);module.exports=function(e){return isObject(e)&&!isArray(e)?e:1===e.length?e[0]:merge.recursive.apply(void 0,e)};
+	"use strict";var merge=__webpack_require__(/*! merge */ 484),isObject=__webpack_require__(/*! lodash.isobject */ 480),isArray=__webpack_require__(/*! lodash.isarray */ 485);module.exports=function(e){return isObject(e)&&!isArray(e)?e:1===e.length?e[0]:merge.recursive.apply(void 0,e)};
 
 /***/ },
-/* 630 */
+/* 484 */
 /*!**********************************************!*\
   !*** C:/source/GitHub/HIoS/~/merge/merge.js ***!
   \**********************************************/
@@ -86193,7 +86065,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../../../../../Users/efess/AppData/Roaming/npm/~/webpack/buildin/module.js */ 328)(module)))
 
 /***/ },
-/* 631 */
+/* 485 */
 /*!******************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/reactcss/~/lodash.isarray/index.js ***!
   \******************************************************************/
@@ -86237,16 +86109,16 @@
 
 
 /***/ },
-/* 632 */
+/* 486 */
 /*!****************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/reactcss/lib/transform-mixins.js ***!
   \****************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";var isObject=__webpack_require__(/*! lodash.isobject */ 626),isArray=__webpack_require__(/*! lodash.isarray */ 631),merge=__webpack_require__(/*! merge */ 630),localProps={userSelect:function(r){return null!==r?{WebkitTouchCallout:r,KhtmlUserSelect:r,MozUserSelect:r,msUserSelect:r,WebkitUserSelect:r,userSelect:r}:void 0},flex:function(r){return null!==r?{WebkitBoxFlex:r,MozBoxFlex:r,WebkitFlex:r,msFlex:r,flex:r}:void 0},flexBasis:function(r){return null!==r?{WebkitFlexBasis:r,flexBasis:r}:void 0},justifyContent:function(r){return null!==r?{WebkitJustifyContent:r,justifyContent:r}:void 0},transition:function(r){return null!==r?{msTransition:r,MozTransition:r,OTransition:r,WebkitTransition:r,transition:r}:void 0},transform:function(r){return null!==r?{msTransform:r,MozTransform:r,OTransform:r,WebkitTransform:r,transform:r}:void 0},Absolute:function(r){if(null!==r){var e=r.split(" ");return{position:"absolute",top:e[0],right:e[1],bottom:e[2],left:e[3]}}},Extend:function(r,e){var t=e[r];return t?t:void 0}},transform=function r(e,t,n){var i=merge(t,localProps),o={};for(var s in e){var l=e[s];if(isObject(l)&&!isArray(l))o[s]=r(l,t,e);else if(i[s]){var u=i[s](l,n);for(var a in u){var f=u[a];o[a]=f}}else o[s]=l}return o};module.exports=function(r,e,t){return transform(r,e,t)};
+	"use strict";var isObject=__webpack_require__(/*! lodash.isobject */ 480),isArray=__webpack_require__(/*! lodash.isarray */ 485),merge=__webpack_require__(/*! merge */ 484),localProps={userSelect:function(r){return null!==r?{WebkitTouchCallout:r,KhtmlUserSelect:r,MozUserSelect:r,msUserSelect:r,WebkitUserSelect:r,userSelect:r}:void 0},flex:function(r){return null!==r?{WebkitBoxFlex:r,MozBoxFlex:r,WebkitFlex:r,msFlex:r,flex:r}:void 0},flexBasis:function(r){return null!==r?{WebkitFlexBasis:r,flexBasis:r}:void 0},justifyContent:function(r){return null!==r?{WebkitJustifyContent:r,justifyContent:r}:void 0},transition:function(r){return null!==r?{msTransition:r,MozTransition:r,OTransition:r,WebkitTransition:r,transition:r}:void 0},transform:function(r){return null!==r?{msTransform:r,MozTransform:r,OTransform:r,WebkitTransform:r,transform:r}:void 0},Absolute:function(r){if(null!==r){var e=r.split(" ");return{position:"absolute",top:e[0],right:e[1],bottom:e[2],left:e[3]}}},Extend:function(r,e){var t=e[r];return t?t:void 0}},transform=function r(e,t,n){var i=merge(t,localProps),o={};for(var s in e){var l=e[s];if(isObject(l)&&!isArray(l))o[s]=r(l,t,e);else if(i[s]){var u=i[s](l,n);for(var a in u){var f=u[a];o[a]=f}}else o[s]=l}return o};module.exports=function(r,e,t){return transform(r,e,t)};
 
 /***/ },
-/* 633 */
+/* 487 */
 /*!**************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/common/index.js ***!
   \**************************************************************************/
@@ -86258,7 +86130,7 @@
 	  value: true
 	});
 	
-	var _Alpha = __webpack_require__(/*! ./Alpha */ 634);
+	var _Alpha = __webpack_require__(/*! ./Alpha */ 488);
 	
 	Object.defineProperty(exports, 'Alpha', {
 	  enumerable: true,
@@ -86267,7 +86139,7 @@
 	  }
 	});
 	
-	var _Checkboard = __webpack_require__(/*! ./Checkboard */ 637);
+	var _Checkboard = __webpack_require__(/*! ./Checkboard */ 491);
 	
 	Object.defineProperty(exports, 'Checkboard', {
 	  enumerable: true,
@@ -86276,7 +86148,7 @@
 	  }
 	});
 	
-	var _EditableInput = __webpack_require__(/*! ./EditableInput */ 638);
+	var _EditableInput = __webpack_require__(/*! ./EditableInput */ 492);
 	
 	Object.defineProperty(exports, 'EditableInput', {
 	  enumerable: true,
@@ -86285,7 +86157,7 @@
 	  }
 	});
 	
-	var _Hue = __webpack_require__(/*! ./Hue */ 639);
+	var _Hue = __webpack_require__(/*! ./Hue */ 493);
 	
 	Object.defineProperty(exports, 'Hue', {
 	  enumerable: true,
@@ -86294,7 +86166,7 @@
 	  }
 	});
 	
-	var _Saturation = __webpack_require__(/*! ./Saturation */ 640);
+	var _Saturation = __webpack_require__(/*! ./Saturation */ 494);
 	
 	Object.defineProperty(exports, 'Saturation', {
 	  enumerable: true,
@@ -86303,7 +86175,7 @@
 	  }
 	});
 	
-	var _ColorWrap = __webpack_require__(/*! ./ColorWrap */ 643);
+	var _ColorWrap = __webpack_require__(/*! ./ColorWrap */ 497);
 	
 	Object.defineProperty(exports, 'ColorWrap', {
 	  enumerable: true,
@@ -86315,7 +86187,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ },
-/* 634 */
+/* 488 */
 /*!**************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/common/Alpha.js ***!
   \**************************************************************************/
@@ -86333,15 +86205,15 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _Checkboard = __webpack_require__(/*! ./Checkboard */ 637);
+	var _Checkboard = __webpack_require__(/*! ./Checkboard */ 491);
 	
 	var _Checkboard2 = _interopRequireDefault(_Checkboard);
 	
@@ -86488,16 +86360,16 @@
 	exports.default = Alpha;
 
 /***/ },
-/* 635 */
+/* 489 */
 /*!*********************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-addons-shallow-compare/index.js ***!
   \*********************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(/*! react/lib/shallowCompare */ 636);
+	module.exports = __webpack_require__(/*! react/lib/shallowCompare */ 490);
 
 /***/ },
-/* 636 */
+/* 490 */
 /*!***********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react/lib/shallowCompare.js ***!
   \***********************************************************/
@@ -86530,7 +86402,7 @@
 	module.exports = shallowCompare;
 
 /***/ },
-/* 637 */
+/* 491 */
 /*!*******************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/common/Checkboard.js ***!
   \*******************************************************************************/
@@ -86548,11 +86420,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -86642,7 +86514,7 @@
 	exports.default = Checkboard;
 
 /***/ },
-/* 638 */
+/* 492 */
 /*!**********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/common/EditableInput.js ***!
   \**********************************************************************************/
@@ -86660,11 +86532,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -86840,7 +86712,7 @@
 	exports.default = EditableInput;
 
 /***/ },
-/* 639 */
+/* 493 */
 /*!************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/common/Hue.js ***!
   \************************************************************************/
@@ -86858,11 +86730,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -87033,7 +86905,7 @@
 	exports.default = Hue;
 
 /***/ },
-/* 640 */
+/* 494 */
 /*!*******************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/common/Saturation.js ***!
   \*******************************************************************************/
@@ -87051,15 +86923,15 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _lodash = __webpack_require__(/*! lodash.throttle */ 641);
+	var _lodash = __webpack_require__(/*! lodash.throttle */ 495);
 	
 	var _lodash2 = _interopRequireDefault(_lodash);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -87210,7 +87082,7 @@
 	exports.default = Saturation;
 
 /***/ },
-/* 641 */
+/* 495 */
 /*!********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.throttle/index.js ***!
   \********************************************************/
@@ -87224,7 +87096,7 @@
 	 * Copyright 2009-2016 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var debounce = __webpack_require__(/*! lodash.debounce */ 642);
+	var debounce = __webpack_require__(/*! lodash.debounce */ 496);
 	
 	/** Used as the `TypeError` message for "Functions" methods. */
 	var FUNC_ERROR_TEXT = 'Expected a function';
@@ -87319,7 +87191,7 @@
 
 
 /***/ },
-/* 642 */
+/* 496 */
 /*!********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.debounce/index.js ***!
   \********************************************************/
@@ -87722,7 +87594,7 @@
 
 
 /***/ },
-/* 643 */
+/* 497 */
 /*!******************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/common/ColorWrap.js ***!
   \******************************************************************************/
@@ -87742,23 +87614,23 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _merge = __webpack_require__(/*! merge */ 630);
+	var _merge = __webpack_require__(/*! merge */ 484);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
-	var _lodash = __webpack_require__(/*! lodash.isplainobject */ 644);
+	var _lodash = __webpack_require__(/*! lodash.isplainobject */ 498);
 	
 	var _lodash2 = _interopRequireDefault(_lodash);
 	
-	var _lodash3 = __webpack_require__(/*! lodash.debounce */ 642);
+	var _lodash3 = __webpack_require__(/*! lodash.debounce */ 496);
 	
 	var _lodash4 = _interopRequireDefault(_lodash3);
 	
-	var _color = __webpack_require__(/*! ../../helpers/color */ 645);
+	var _color = __webpack_require__(/*! ../../helpers/color */ 499);
 	
 	var _color2 = _interopRequireDefault(_color);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -87833,7 +87705,7 @@
 	exports.default = ColorWrap;
 
 /***/ },
-/* 644 */
+/* 498 */
 /*!*************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.isplainobject/index.js ***!
   \*************************************************************/
@@ -87977,7 +87849,7 @@
 
 
 /***/ },
-/* 645 */
+/* 499 */
 /*!****************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/helpers/color.js ***!
   \****************************************************************/
@@ -87988,7 +87860,7 @@
 	  value: true
 	});
 	
-	var _tinycolor = __webpack_require__(/*! ../../modules/tinycolor2 */ 646);
+	var _tinycolor = __webpack_require__(/*! ../../modules/tinycolor2 */ 500);
 	
 	var _tinycolor2 = _interopRequireDefault(_tinycolor);
 	
@@ -88041,7 +87913,7 @@
 	};
 
 /***/ },
-/* 646 */
+/* 500 */
 /*!***********************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/modules/tinycolor2/index.js ***!
   \***********************************************************************/
@@ -89216,7 +89088,7 @@
 
 
 /***/ },
-/* 647 */
+/* 501 */
 /*!*********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/chrome/ChromeFields.js ***!
   \*********************************************************************************/
@@ -89236,19 +89108,19 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _color = __webpack_require__(/*! ../../helpers/color */ 645);
+	var _color = __webpack_require__(/*! ../../helpers/color */ 499);
 	
 	var _color2 = _interopRequireDefault(_color);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -89506,7 +89378,7 @@
 	exports.default = ChromeFields;
 
 /***/ },
-/* 648 */
+/* 502 */
 /*!**********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/chrome/ChromePointer.js ***!
   \**********************************************************************************/
@@ -89524,11 +89396,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -89586,7 +89458,7 @@
 	exports.default = ChromePointer;
 
 /***/ },
-/* 649 */
+/* 503 */
 /*!****************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/chrome/ChromePointerCircle.js ***!
   \****************************************************************************************/
@@ -89604,11 +89476,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -89665,7 +89537,7 @@
 	exports.default = ChromePointerCircle;
 
 /***/ },
-/* 650 */
+/* 504 */
 /*!*****************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/compact/Compact.js ***!
   \*****************************************************************************/
@@ -89685,27 +89557,27 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _color = __webpack_require__(/*! ../../helpers/color */ 645);
+	var _color = __webpack_require__(/*! ../../helpers/color */ 499);
 	
 	var _color2 = _interopRequireDefault(_color);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _reactMaterialDesign = __webpack_require__(/*! ../../../modules/react-material-design */ 651);
+	var _reactMaterialDesign = __webpack_require__(/*! ../../../modules/react-material-design */ 505);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
-	var _CompactColor = __webpack_require__(/*! ./CompactColor */ 658);
+	var _CompactColor = __webpack_require__(/*! ./CompactColor */ 512);
 	
 	var _CompactColor2 = _interopRequireDefault(_CompactColor);
 	
-	var _CompactFields = __webpack_require__(/*! ./CompactFields */ 659);
+	var _CompactFields = __webpack_require__(/*! ./CompactFields */ 513);
 	
 	var _CompactFields2 = _interopRequireDefault(_CompactFields);
 	
@@ -89804,7 +89676,7 @@
 	exports.default = (0, _common.ColorWrap)(Compact);
 
 /***/ },
-/* 651 */
+/* 505 */
 /*!**********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/modules/react-material-design/index.js ***!
   \**********************************************************************************/
@@ -89818,15 +89690,15 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _libComponentsRaised = __webpack_require__(/*! ./lib/components/Raised */ 652);
+	var _libComponentsRaised = __webpack_require__(/*! ./lib/components/Raised */ 506);
 	
 	var _libComponentsRaised2 = _interopRequireDefault(_libComponentsRaised);
 	
-	var _libComponentsTile = __webpack_require__(/*! ./lib/components/Tile */ 653);
+	var _libComponentsTile = __webpack_require__(/*! ./lib/components/Tile */ 507);
 	
 	var _libComponentsTile2 = _interopRequireDefault(_libComponentsTile);
 	
-	var _libComponentsTabs = __webpack_require__(/*! ./lib/components/Tabs */ 654);
+	var _libComponentsTabs = __webpack_require__(/*! ./lib/components/Tabs */ 508);
 	
 	var _libComponentsTabs2 = _interopRequireDefault(_libComponentsTabs);
 	
@@ -89836,7 +89708,7 @@
 
 
 /***/ },
-/* 652 */
+/* 506 */
 /*!**************************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/modules/react-material-design/lib/components/Raised.js ***!
   \**************************************************************************************************/
@@ -89855,7 +89727,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
@@ -89971,7 +89843,7 @@
 	exports.default = Raised;
 
 /***/ },
-/* 653 */
+/* 507 */
 /*!************************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/modules/react-material-design/lib/components/Tile.js ***!
   \************************************************************************************************/
@@ -89992,7 +89864,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
@@ -90112,7 +89984,7 @@
 
 
 /***/ },
-/* 654 */
+/* 508 */
 /*!************************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/modules/react-material-design/lib/components/Tabs.js ***!
   \************************************************************************************************/
@@ -90132,19 +90004,19 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _lodash = __webpack_require__(/*! lodash */ 655);
+	var _lodash = __webpack_require__(/*! lodash */ 509);
 	
 	var _lodash2 = _interopRequireDefault(_lodash);
 	
-	var _Tab = __webpack_require__(/*! ./Tab */ 656);
+	var _Tab = __webpack_require__(/*! ./Tab */ 510);
 	
 	var _Tab2 = _interopRequireDefault(_Tab);
 	
-	var _Link = __webpack_require__(/*! ./Link */ 657);
+	var _Link = __webpack_require__(/*! ./Link */ 511);
 	
 	var _Link2 = _interopRequireDefault(_Link);
 	
@@ -90391,7 +90263,7 @@
 	exports.default = Tabs;
 
 /***/ },
-/* 655 */
+/* 509 */
 /*!************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash/lodash.js ***!
   \************************************************/
@@ -106805,7 +106677,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../../../../../Users/efess/AppData/Roaming/npm/~/webpack/buildin/module.js */ 328)(module), (function() { return this; }())))
 
 /***/ },
-/* 656 */
+/* 510 */
 /*!***********************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/modules/react-material-design/lib/components/Tab.js ***!
   \***********************************************************************************************/
@@ -106823,7 +106695,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
@@ -106909,7 +106781,7 @@
 	exports.default = Tab;
 
 /***/ },
-/* 657 */
+/* 511 */
 /*!************************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/modules/react-material-design/lib/components/Link.js ***!
   \************************************************************************************************/
@@ -106927,7 +106799,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _lodash = __webpack_require__(/*! lodash */ 655);
+	var _lodash = __webpack_require__(/*! lodash */ 509);
 	
 	var _lodash2 = _interopRequireDefault(_lodash);
 	
@@ -106997,7 +106869,7 @@
 	exports.default = Link;
 
 /***/ },
-/* 658 */
+/* 512 */
 /*!**********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/compact/CompactColor.js ***!
   \**********************************************************************************/
@@ -107015,11 +106887,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -107104,7 +106976,7 @@
 	exports.default = CompactColor;
 
 /***/ },
-/* 659 */
+/* 513 */
 /*!***********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/compact/CompactFields.js ***!
   \***********************************************************************************/
@@ -107124,15 +106996,15 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -107266,7 +107138,7 @@
 	exports.default = CompactColor;
 
 /***/ },
-/* 660 */
+/* 514 */
 /*!*******************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/material/Material.js ***!
   \*******************************************************************************/
@@ -107286,21 +107158,21 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _color = __webpack_require__(/*! ../../helpers/color */ 645);
+	var _color = __webpack_require__(/*! ../../helpers/color */ 499);
 	
 	var _color2 = _interopRequireDefault(_color);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _reactMaterialDesign = __webpack_require__(/*! ../../../modules/react-material-design */ 651);
+	var _reactMaterialDesign = __webpack_require__(/*! ../../../modules/react-material-design */ 505);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -107456,7 +107328,7 @@
 	exports.default = (0, _common.ColorWrap)(Material);
 
 /***/ },
-/* 661 */
+/* 515 */
 /*!*********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/photoshop/Photoshop.js ***!
   \*********************************************************************************/
@@ -107476,25 +107348,25 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
-	var _PhotoshopFields = __webpack_require__(/*! ./PhotoshopFields */ 662);
+	var _PhotoshopFields = __webpack_require__(/*! ./PhotoshopFields */ 516);
 	
 	var _PhotoshopFields2 = _interopRequireDefault(_PhotoshopFields);
 	
-	var _PhotoshopPointerCircle = __webpack_require__(/*! ./PhotoshopPointerCircle */ 663);
+	var _PhotoshopPointerCircle = __webpack_require__(/*! ./PhotoshopPointerCircle */ 517);
 	
 	var _PhotoshopPointerCircle2 = _interopRequireDefault(_PhotoshopPointerCircle);
 	
-	var _PhotoshopPointer = __webpack_require__(/*! ./PhotoshopPointer */ 664);
+	var _PhotoshopPointer = __webpack_require__(/*! ./PhotoshopPointer */ 518);
 	
 	var _PhotoshopPointer2 = _interopRequireDefault(_PhotoshopPointer);
 	
@@ -107723,7 +107595,7 @@
 	exports.default = (0, _common.ColorWrap)(Photoshop);
 
 /***/ },
-/* 662 */
+/* 516 */
 /*!***************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/photoshop/PhotoshopFields.js ***!
   \***************************************************************************************/
@@ -107743,19 +107615,19 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _color = __webpack_require__(/*! ../../helpers/color */ 645);
+	var _color = __webpack_require__(/*! ../../helpers/color */ 499);
 	
 	var _color2 = _interopRequireDefault(_color);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -107929,7 +107801,7 @@
 	exports.default = PhotoshopPicker;
 
 /***/ },
-/* 663 */
+/* 517 */
 /*!**********************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/photoshop/PhotoshopPointerCircle.js ***!
   \**********************************************************************************************/
@@ -107947,11 +107819,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -108020,7 +107892,7 @@
 	exports.default = PhotoshopPointerCircle;
 
 /***/ },
-/* 664 */
+/* 518 */
 /*!****************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/photoshop/PhotoshopPointer.js ***!
   \****************************************************************************************/
@@ -108038,11 +107910,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -108140,7 +108012,7 @@
 	exports.default = PhotoshopPointerCircle;
 
 /***/ },
-/* 665 */
+/* 519 */
 /*!*****************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/sketched/Sketch.js ***!
   \*****************************************************************************/
@@ -108160,21 +108032,21 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
-	var _SketchFields = __webpack_require__(/*! ./SketchFields */ 666);
+	var _SketchFields = __webpack_require__(/*! ./SketchFields */ 520);
 	
 	var _SketchFields2 = _interopRequireDefault(_SketchFields);
 	
-	var _SketchPresetColors = __webpack_require__(/*! ./SketchPresetColors */ 667);
+	var _SketchPresetColors = __webpack_require__(/*! ./SketchPresetColors */ 521);
 	
 	var _SketchPresetColors2 = _interopRequireDefault(_SketchPresetColors);
 	
@@ -108332,7 +108204,7 @@
 	exports.default = (0, _common.ColorWrap)(Sketch);
 
 /***/ },
-/* 666 */
+/* 520 */
 /*!***********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/sketched/SketchFields.js ***!
   \***********************************************************************************/
@@ -108352,19 +108224,19 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _color = __webpack_require__(/*! ../../helpers/color */ 645);
+	var _color = __webpack_require__(/*! ../../helpers/color */ 499);
 	
 	var _color2 = _interopRequireDefault(_color);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -108501,7 +108373,7 @@
 	exports.default = ShetchFields;
 
 /***/ },
-/* 667 */
+/* 521 */
 /*!*****************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/sketched/SketchPresetColors.js ***!
   \*****************************************************************************************/
@@ -108519,11 +108391,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -108634,7 +108506,7 @@
 	exports.default = SketchPresetColors;
 
 /***/ },
-/* 668 */
+/* 522 */
 /*!***************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/slider/Slider.js ***!
   \***************************************************************************/
@@ -108654,21 +108526,21 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
-	var _SliderSwatches = __webpack_require__(/*! ./SliderSwatches */ 669);
+	var _SliderSwatches = __webpack_require__(/*! ./SliderSwatches */ 523);
 	
 	var _SliderSwatches2 = _interopRequireDefault(_SliderSwatches);
 	
-	var _SliderPointer = __webpack_require__(/*! ./SliderPointer */ 671);
+	var _SliderPointer = __webpack_require__(/*! ./SliderPointer */ 525);
 	
 	var _SliderPointer2 = _interopRequireDefault(_SliderPointer);
 	
@@ -108741,7 +108613,7 @@
 	exports.default = (0, _common.ColorWrap)(Slider);
 
 /***/ },
-/* 669 */
+/* 523 */
 /*!***********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/slider/SliderSwatches.js ***!
   \***********************************************************************************/
@@ -108761,15 +108633,15 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _SliderSwatch = __webpack_require__(/*! ./SliderSwatch */ 670);
+	var _SliderSwatch = __webpack_require__(/*! ./SliderSwatch */ 524);
 	
 	var _SliderSwatch2 = _interopRequireDefault(_SliderSwatch);
 	
@@ -108862,7 +108734,7 @@
 	exports.default = SliderSwatches;
 
 /***/ },
-/* 670 */
+/* 524 */
 /*!*********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/slider/SliderSwatch.js ***!
   \*********************************************************************************/
@@ -108880,11 +108752,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -108962,7 +108834,7 @@
 	exports.default = SliderSwatch;
 
 /***/ },
-/* 671 */
+/* 525 */
 /*!**********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/slider/SliderPointer.js ***!
   \**********************************************************************************/
@@ -108980,11 +108852,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -109042,7 +108914,7 @@
 	exports.default = SliderPointer;
 
 /***/ },
-/* 672 */
+/* 526 */
 /*!*******************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/swatches/Swatches.js ***!
   \*******************************************************************************/
@@ -109060,27 +108932,27 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _color = __webpack_require__(/*! ../../helpers/color */ 645);
+	var _color = __webpack_require__(/*! ../../helpers/color */ 499);
 	
 	var _color2 = _interopRequireDefault(_color);
 	
-	var _materialColors = __webpack_require__(/*! material-colors */ 673);
+	var _materialColors = __webpack_require__(/*! material-colors */ 527);
 	
 	var _materialColors2 = _interopRequireDefault(_materialColors);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _common = __webpack_require__(/*! ../common */ 633);
+	var _common = __webpack_require__(/*! ../common */ 487);
 	
-	var _reactMaterialDesign = __webpack_require__(/*! ../../../modules/react-material-design */ 651);
+	var _reactMaterialDesign = __webpack_require__(/*! ../../../modules/react-material-design */ 505);
 	
-	var _SwatchesGroup = __webpack_require__(/*! ./SwatchesGroup */ 674);
+	var _SwatchesGroup = __webpack_require__(/*! ./SwatchesGroup */ 528);
 	
 	var _SwatchesGroup2 = _interopRequireDefault(_SwatchesGroup);
 	
@@ -109181,7 +109053,7 @@
 	exports.default = (0, _common.ColorWrap)(Swatches);
 
 /***/ },
-/* 673 */
+/* 527 */
 /*!**************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/material-colors/dist/colors.js ***!
   \**************************************************************/
@@ -109201,7 +109073,7 @@
 
 
 /***/ },
-/* 674 */
+/* 528 */
 /*!************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/swatches/SwatchesGroup.js ***!
   \************************************************************************************/
@@ -109219,15 +109091,15 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
-	var _SwatchesColor = __webpack_require__(/*! ./SwatchesColor */ 675);
+	var _SwatchesColor = __webpack_require__(/*! ./SwatchesColor */ 529);
 	
 	var _SwatchesColor2 = _interopRequireDefault(_SwatchesColor);
 	
@@ -109296,7 +109168,7 @@
 	exports.default = SwatchesGroup;
 
 /***/ },
-/* 675 */
+/* 529 */
 /*!************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-color/lib/components/swatches/SwatchesColor.js ***!
   \************************************************************************************/
@@ -109314,11 +109186,11 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _reactcss = __webpack_require__(/*! reactcss */ 623);
+	var _reactcss = __webpack_require__(/*! reactcss */ 477);
 	
 	var _reactcss2 = _interopRequireDefault(_reactcss);
 	
-	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 635);
+	var _reactAddonsShallowCompare = __webpack_require__(/*! react-addons-shallow-compare */ 489);
 	
 	var _reactAddonsShallowCompare2 = _interopRequireDefault(_reactAddonsShallowCompare);
 	
@@ -109411,18 +109283,18 @@
 	exports.default = SwatchesColor;
 
 /***/ },
-/* 676 */
+/* 530 */
 /*!********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-modal/lib/index.js ***!
   \********************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(/*! ./components/Modal */ 677);
+	module.exports = __webpack_require__(/*! ./components/Modal */ 531);
 	
 
 
 /***/ },
-/* 677 */
+/* 531 */
 /*!*******************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-modal/lib/components/Modal.js ***!
   \*******************************************************************/
@@ -109430,12 +109302,12 @@
 
 	/* WEBPACK VAR INJECTION */(function(process) {var React = __webpack_require__(/*! react */ 3);
 	var ReactDOM = __webpack_require__(/*! react-dom */ 35);
-	var ExecutionEnvironment = __webpack_require__(/*! exenv */ 678);
-	var ModalPortal = React.createFactory(__webpack_require__(/*! ./ModalPortal */ 679));
-	var ariaAppHider = __webpack_require__(/*! ../helpers/ariaAppHider */ 694);
-	var elementClass = __webpack_require__(/*! element-class */ 695);
+	var ExecutionEnvironment = __webpack_require__(/*! exenv */ 532);
+	var ModalPortal = React.createFactory(__webpack_require__(/*! ./ModalPortal */ 533));
+	var ariaAppHider = __webpack_require__(/*! ../helpers/ariaAppHider */ 548);
+	var elementClass = __webpack_require__(/*! element-class */ 549);
 	var renderSubtreeIntoContainer = __webpack_require__(/*! react-dom */ 35).unstable_renderSubtreeIntoContainer;
-	var Assign = __webpack_require__(/*! lodash.assign */ 683);
+	var Assign = __webpack_require__(/*! lodash.assign */ 537);
 	
 	var SafeHTMLElement = ExecutionEnvironment.canUseDOM ? window.HTMLElement : {};
 	var AppElement = ExecutionEnvironment.canUseDOM ? document.body : {appendChild: function() {}};
@@ -109543,7 +109415,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/process/browser.js */ 5)))
 
 /***/ },
-/* 678 */
+/* 532 */
 /*!**********************************************!*\
   !*** C:/source/GitHub/HIoS/~/exenv/index.js ***!
   \**********************************************/
@@ -109591,7 +109463,7 @@
 
 
 /***/ },
-/* 679 */
+/* 533 */
 /*!*************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-modal/lib/components/ModalPortal.js ***!
   \*************************************************************************/
@@ -109599,9 +109471,9 @@
 
 	var React = __webpack_require__(/*! react */ 3);
 	var div = React.DOM.div;
-	var focusManager = __webpack_require__(/*! ../helpers/focusManager */ 680);
-	var scopeTab = __webpack_require__(/*! ../helpers/scopeTab */ 682);
-	var Assign = __webpack_require__(/*! lodash.assign */ 683);
+	var focusManager = __webpack_require__(/*! ../helpers/focusManager */ 534);
+	var scopeTab = __webpack_require__(/*! ../helpers/scopeTab */ 536);
+	var Assign = __webpack_require__(/*! lodash.assign */ 537);
 	
 	// so that our CSS is statically analyzable
 	var CLASS_NAMES = {
@@ -109792,13 +109664,13 @@
 
 
 /***/ },
-/* 680 */
+/* 534 */
 /*!***********************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-modal/lib/helpers/focusManager.js ***!
   \***********************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var findTabbable = __webpack_require__(/*! ../helpers/tabbable */ 681);
+	var findTabbable = __webpack_require__(/*! ../helpers/tabbable */ 535);
 	var modalElement = null;
 	var focusLaterElement = null;
 	var needToFocus = false;
@@ -109869,7 +109741,7 @@
 
 
 /***/ },
-/* 681 */
+/* 535 */
 /*!*******************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-modal/lib/helpers/tabbable.js ***!
   \*******************************************************************/
@@ -109928,13 +109800,13 @@
 
 
 /***/ },
-/* 682 */
+/* 536 */
 /*!*******************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-modal/lib/helpers/scopeTab.js ***!
   \*******************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var findTabbable = __webpack_require__(/*! ../helpers/tabbable */ 681);
+	var findTabbable = __webpack_require__(/*! ../helpers/tabbable */ 535);
 	
 	module.exports = function(node, event) {
 	  var tabbable = findTabbable(node);
@@ -109956,7 +109828,7 @@
 
 
 /***/ },
-/* 683 */
+/* 537 */
 /*!******************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.assign/index.js ***!
   \******************************************************/
@@ -109970,9 +109842,9 @@
 	 * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var baseAssign = __webpack_require__(/*! lodash._baseassign */ 684),
-	    createAssigner = __webpack_require__(/*! lodash._createassigner */ 690),
-	    keys = __webpack_require__(/*! lodash.keys */ 686);
+	var baseAssign = __webpack_require__(/*! lodash._baseassign */ 538),
+	    createAssigner = __webpack_require__(/*! lodash._createassigner */ 544),
+	    keys = __webpack_require__(/*! lodash.keys */ 540);
 	
 	/**
 	 * A specialized version of `_.assign` for customizing assigned values without
@@ -110045,7 +109917,7 @@
 
 
 /***/ },
-/* 684 */
+/* 538 */
 /*!***********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash._baseassign/index.js ***!
   \***********************************************************/
@@ -110059,8 +109931,8 @@
 	 * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var baseCopy = __webpack_require__(/*! lodash._basecopy */ 685),
-	    keys = __webpack_require__(/*! lodash.keys */ 686);
+	var baseCopy = __webpack_require__(/*! lodash._basecopy */ 539),
+	    keys = __webpack_require__(/*! lodash.keys */ 540);
 	
 	/**
 	 * The base implementation of `_.assign` without support for argument juggling,
@@ -110081,7 +109953,7 @@
 
 
 /***/ },
-/* 685 */
+/* 539 */
 /*!*********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash._basecopy/index.js ***!
   \*********************************************************/
@@ -110122,7 +109994,7 @@
 
 
 /***/ },
-/* 686 */
+/* 540 */
 /*!****************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.keys/index.js ***!
   \****************************************************/
@@ -110136,9 +110008,9 @@
 	 * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var getNative = __webpack_require__(/*! lodash._getnative */ 687),
-	    isArguments = __webpack_require__(/*! lodash.isarguments */ 688),
-	    isArray = __webpack_require__(/*! lodash.isarray */ 689);
+	var getNative = __webpack_require__(/*! lodash._getnative */ 541),
+	    isArguments = __webpack_require__(/*! lodash.isarguments */ 542),
+	    isArray = __webpack_require__(/*! lodash.isarray */ 543);
 	
 	/** Used to detect unsigned integer values. */
 	var reIsUint = /^\d+$/;
@@ -110367,7 +110239,7 @@
 
 
 /***/ },
-/* 687 */
+/* 541 */
 /*!**********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash._getnative/index.js ***!
   \**********************************************************/
@@ -110513,7 +110385,7 @@
 
 
 /***/ },
-/* 688 */
+/* 542 */
 /*!***********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.isarguments/index.js ***!
   \***********************************************************/
@@ -110765,7 +110637,7 @@
 
 
 /***/ },
-/* 689 */
+/* 543 */
 /*!*******************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.isarray/index.js ***!
   \*******************************************************/
@@ -110954,7 +110826,7 @@
 
 
 /***/ },
-/* 690 */
+/* 544 */
 /*!***************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash._createassigner/index.js ***!
   \***************************************************************/
@@ -110968,9 +110840,9 @@
 	 * Copyright 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var bindCallback = __webpack_require__(/*! lodash._bindcallback */ 691),
-	    isIterateeCall = __webpack_require__(/*! lodash._isiterateecall */ 692),
-	    restParam = __webpack_require__(/*! lodash.restparam */ 693);
+	var bindCallback = __webpack_require__(/*! lodash._bindcallback */ 545),
+	    isIterateeCall = __webpack_require__(/*! lodash._isiterateecall */ 546),
+	    restParam = __webpack_require__(/*! lodash.restparam */ 547);
 	
 	/**
 	 * Creates a function that assigns properties of source object(s) to a given
@@ -111015,7 +110887,7 @@
 
 
 /***/ },
-/* 691 */
+/* 545 */
 /*!*************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash._bindcallback/index.js ***!
   \*************************************************************/
@@ -111089,7 +110961,7 @@
 
 
 /***/ },
-/* 692 */
+/* 546 */
 /*!***************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash._isiterateecall/index.js ***!
   \***************************************************************/
@@ -111230,7 +111102,7 @@
 
 
 /***/ },
-/* 693 */
+/* 547 */
 /*!*********************************************************!*\
   !*** C:/source/GitHub/HIoS/~/lodash.restparam/index.js ***!
   \*********************************************************/
@@ -111306,7 +111178,7 @@
 
 
 /***/ },
-/* 694 */
+/* 548 */
 /*!***********************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-modal/lib/helpers/ariaAppHider.js ***!
   \***********************************************************************/
@@ -111357,7 +111229,7 @@
 
 
 /***/ },
-/* 695 */
+/* 549 */
 /*!******************************************************!*\
   !*** C:/source/GitHub/HIoS/~/element-class/index.js ***!
   \******************************************************/
@@ -111425,14 +111297,14 @@
 
 
 /***/ },
-/* 696 */
+/* 550 */
 /*!**********************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-tap-event-plugin/src/injectTapEventPlugin.js ***!
   \**********************************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(process) {var invariant = __webpack_require__(/*! fbjs/lib/invariant */ 697);
-	var defaultClickRejectionStrategy = __webpack_require__(/*! ./defaultClickRejectionStrategy */ 698);
+	/* WEBPACK VAR INJECTION */(function(process) {var invariant = __webpack_require__(/*! fbjs/lib/invariant */ 551);
+	var defaultClickRejectionStrategy = __webpack_require__(/*! ./defaultClickRejectionStrategy */ 552);
 	
 	var alreadyInjected = false;
 	
@@ -111454,14 +111326,14 @@
 	  alreadyInjected = true;
 	
 	  __webpack_require__(/*! react/lib/EventPluginHub */ 44).injection.injectEventPluginsByName({
-	    'TapEventPlugin':       __webpack_require__(/*! ./TapEventPlugin.js */ 699)(shouldRejectClick)
+	    'TapEventPlugin':       __webpack_require__(/*! ./TapEventPlugin.js */ 553)(shouldRejectClick)
 	  });
 	};
 	
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/process/browser.js */ 5)))
 
 /***/ },
-/* 697 */
+/* 551 */
 /*!******************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-tap-event-plugin/~/fbjs/lib/invariant.js ***!
   \******************************************************************************/
@@ -111519,7 +111391,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/process/browser.js */ 5)))
 
 /***/ },
-/* 698 */
+/* 552 */
 /*!*******************************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-tap-event-plugin/src/defaultClickRejectionStrategy.js ***!
   \*******************************************************************************************/
@@ -111533,7 +111405,7 @@
 
 
 /***/ },
-/* 699 */
+/* 553 */
 /*!****************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-tap-event-plugin/src/TapEventPlugin.js ***!
   \****************************************************************************/
@@ -111564,10 +111436,10 @@
 	var EventPluginUtils = __webpack_require__(/*! react/lib/EventPluginUtils */ 46);
 	var EventPropagators = __webpack_require__(/*! react/lib/EventPropagators */ 43);
 	var SyntheticUIEvent = __webpack_require__(/*! react/lib/SyntheticUIEvent */ 76);
-	var TouchEventUtils = __webpack_require__(/*! ./TouchEventUtils */ 700);
+	var TouchEventUtils = __webpack_require__(/*! ./TouchEventUtils */ 554);
 	var ViewportMetrics = __webpack_require__(/*! react/lib/ViewportMetrics */ 77);
 	
-	var keyOf = __webpack_require__(/*! fbjs/lib/keyOf */ 701);
+	var keyOf = __webpack_require__(/*! fbjs/lib/keyOf */ 555);
 	var topLevelTypes = EventConstants.topLevelTypes;
 	
 	var isStartish = EventPluginUtils.isStartish;
@@ -111712,7 +111584,7 @@
 
 
 /***/ },
-/* 700 */
+/* 554 */
 /*!*****************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-tap-event-plugin/src/TouchEventUtils.js ***!
   \*****************************************************************************/
@@ -111763,7 +111635,7 @@
 
 
 /***/ },
-/* 701 */
+/* 555 */
 /*!**************************************************************************!*\
   !*** C:/source/GitHub/HIoS/~/react-tap-event-plugin/~/fbjs/lib/keyOf.js ***!
   \**************************************************************************/
@@ -111806,7 +111678,7 @@
 	module.exports = keyOf;
 
 /***/ },
-/* 702 */
+/* 556 */
 /*!*****************************************!*\
   !*** ./components/spectrum/spectrum.js ***!
   \*****************************************/
@@ -114138,7 +114010,7 @@
 
 
 /***/ },
-/* 703 */
+/* 557 */
 /*!************************************!*\
   !*** ./resources/js/app/edison.js ***!
   \************************************/

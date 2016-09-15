@@ -150,7 +150,7 @@ router.post('/changeOptions', function(req, res) {
     
     var byteCounter = 0;
     
-    uint16view[0] = options.pirTimeout || 2600; // timeou
+    uint16view[0] = options.pirTimeout || 300;  // timeout seconds
     uint8view[3] = options.alwaysOn || 0;
     byteCounter += 4;
     

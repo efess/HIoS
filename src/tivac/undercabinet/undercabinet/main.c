@@ -88,6 +88,7 @@ void check_change_state()
 	if(update_check(_settings))
 	{
 		isChanged = true;
+		motion_set_timeout(_settings->occupiedTimeout);
 	}
 
 	bool newSensorState = motion_get_state();
@@ -114,7 +115,7 @@ int main(void)
 	FPURoundingModeSet(FPU_ROUND_ZERO);
 
 	motion_init();
-	sound_init();
+	//sound_init(); // not used right now.
 
 	ws2812_init(LED_COUNT);
 
@@ -139,14 +140,16 @@ int main(void)
 	_settings->unoccupied.transition = 1;
 	memcpy(_settings->unoccupied.colorPallete, testPallete, sizeof(testPallete));
 
-	_settings->occupiedTimeout = 60000;
+	_settings->occupiedTimeout = 300; // timeout seconds default (5 Mins)
+	_settings->alwaysOn = 0;
 
 	_pixels = (Pixels*)malloc(sizeof(Pixels));
 	_pixels->pixelCount = LED_COUNT;
 	_pixels->pixelData = malloc(LED_BYTE_COUNT); // Buffer before sending
 	memset(_pixels->pixelData, 0, LED_BYTE_COUNT);
 
-	motion_set_timeout(_settings->occupiedTimeout); // 15 seconds
+	motion_set_timeout(_settings->occupiedTimeout);
+
 	uint32_t delay = (MAP_SysCtlClockGet() / 1000) * 20; // 20 ms (clock sycles)
 
 	animation_changeState(_pixels, _settings, true);

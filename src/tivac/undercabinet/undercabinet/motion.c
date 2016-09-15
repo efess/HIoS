@@ -21,7 +21,6 @@
 
 #define TICKS_PER_MILLISECOND CPU_CLOCK / 1000
 
-uint16_t _current_second;
 uint16_t _motion_timeout;
 
 bool volatile _motion_sensor_occupied;
@@ -94,11 +93,6 @@ void configure_millisecond_timer()
 
 bool motion_get_state()
 {
-	uint16_t currentSecond = _msCounter / 1000;
-	if(currentSecond != _current_second)
-	{
-		_current_second = currentSecond;
-	}
 	uint32_t now = _msCounter;
 
 	return _motion_sensor_occupied ||
