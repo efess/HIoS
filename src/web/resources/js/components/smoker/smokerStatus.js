@@ -21,11 +21,13 @@ export default class SmokerStatus extends React.Component {
 
     loadCurrentState(gran)  {
         var that = this;
-        return ajax.post('smokes/getSmokerStatus', {
+        
+        this.serverRequest = ajax.post('smokes/getSmokerStatus', {
             gran: gran || this.state.granularity,
             deviceId: '31316536-6633-3939-2d64-6362372d3436'
-        })
-            .then(function(data) {
+        });
+
+        this.serverRequest.promise().then(function(data) {
                 that.setState(data);
             }, function _fail(err) {
                 console.log('failed getting sessions: ' + err);
@@ -39,6 +41,7 @@ export default class SmokerStatus extends React.Component {
 
     newProbe(probe) {
         return ajax.post('smokes/newSession', probe)
+            .promise()
             .then(this.loadCurrentState.bind(this), function _fail(err) {
                 console.log('failed creating sessions: ' + err);
             });
@@ -46,6 +49,7 @@ export default class SmokerStatus extends React.Component {
 
     closeSession(session) {
         return ajax.post('smokes/closeSession', session)
+            .promise()
             .then(this.loadCurrentState.bind(this), function _fail(err) {
                 console.log('failed closing session: ' + err);
             });
@@ -57,6 +61,7 @@ export default class SmokerStatus extends React.Component {
                 deviceId: '31316536-6633-3939-2d64-6362372d3436',
                 target: target
             })
+            .promise()
             .then(this.loadCurrentState.bind(this), function _fail(err) {
                 console.log('failed updating target: ' + err);
             });
@@ -64,15 +69,22 @@ export default class SmokerStatus extends React.Component {
 
     componentDidMount() {
         var that = this;
+        this.isRefreshing = true;
         (function refresh(){
             that.loadCurrentState.call(that);
             setTimeout(function(){
-                refresh();
+                if(that.isRefreshing) {
+                    refresh();
+                }
             }, 5000)
         }());
     }
 
     componentWillUnmount() {
+        if(this.serverRequest) {
+            this.serverRequest.abort();
+            this.isRefreshing = false;
+        }
     }
 
     render() {

@@ -54,6 +54,7 @@ export default class UndercabinetLightControl extends React.Component {
     componentDidMount() {
         var component = this;
         this.serverRequest =  ajax.post('/undercabinet/getState', '')
+            .promise()
             .then(function(resp) {
                 
                 // var newState = {
@@ -74,14 +75,6 @@ export default class UndercabinetLightControl extends React.Component {
                 // statusBox.text("Failed polling device... Yell at Joe!");
                 // statusBox.show();
             });
-            
-        // this.serverRequest = $.get(this.props.source, function (result) {
-        //     var lastGist = result[0];
-        //     this.setState({
-        //         username: lastGist.owner.login,
-        //         lastGistUrl: lastGist.html_url
-        //     });
-        // }.bind(this));
     }
 
     updateRoomSettings(name) {
@@ -100,7 +93,6 @@ export default class UndercabinetLightControl extends React.Component {
     }
     
     componentWillUnmount() {
-        this.serverRequest.abort();
     }
     
     handleChange(value){

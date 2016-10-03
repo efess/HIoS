@@ -419,7 +419,7 @@ var undercabinet = {
     },
     pullCurrentState: function(){
         var statusBox = $('.status-message');
-        ajax.post('/undercabinet/getState', '')
+        ajax.post('/undercabinet/getState', '').promise()
             .then(function(resp) {
                 statusBox.removeClass('error-message');
                 statusBox.hide();

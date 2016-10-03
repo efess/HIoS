@@ -2,10 +2,16 @@ var Promise = require('promise');
 var $ = require('jquery');
 
 function jqueryAjaxPromise(options) {
-    return new Promise(function(resolve,reject) {
+    var _internalPromise = new Promise(function(resolve,reject) {
         options.success = resolve;
-        options.error = reject;       
-        $.ajax(options); 
+        options.error = reject;
+    });
+    
+    return $.extend($.ajax(options), {
+        promise: function() {
+            return _internalPromise
+                .then(Promise.resolve, Promise.reject);
+        }
     });
 }
 

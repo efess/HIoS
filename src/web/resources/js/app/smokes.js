@@ -13,7 +13,6 @@ $(document).ready(function(){
         ReactDOM.render(
             <MuiThemeProvider muiTheme={getMuiTheme()}>
                 <SmokerStatus/>
-                
             </MuiThemeProvider>
             ,
             domElement

@@ -86,6 +86,10 @@ router.get('/', function(req, res) {
     res.render('smoker', { title: 'Home HIoS - Smoker Stoker'});
 });
 
+router.get('/history', function(req, res) {
+    res.render('smokerHistory', { title: 'Home HIoS - Smoker Stoker - History'});
+});
+
 router.post('/updateProbeTarget', function(req, res) {
     var deviceId = req.body.deviceId || _testDeviceId;
     var target = parseInt(req.body.target || 0);

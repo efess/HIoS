@@ -2,6 +2,8 @@ import React from 'react';
 import AppBar from 'material-ui/AppBar';
 import Drawer from 'material-ui/Drawer';
 import MenuItem from 'material-ui/MenuItem';
+import {List, ListItem, MakeSelectable} from 'material-ui/List';
+import Subheader from 'material-ui/Subheader';
 
 const locationMap = {
     '': 'Home',
@@ -10,7 +12,7 @@ const locationMap = {
 };
 
 export class AppNav extends React.Component {
-    
+
     constructor(props) {
       super(props);
       this.state = {open: false};
@@ -39,9 +41,27 @@ export class AppNav extends React.Component {
                     onLeftIconButtonTouchTap={this.handleToggle.bind(this)}
                 />
                 <Drawer open={this.state.open} onRequestChange={this.closeDrawer.bind(this)} docked={false}>
-                  <MenuItem href="/">Home</MenuItem>
-                  <MenuItem href="/undercabinet">Kitchen</MenuItem>
-                  <MenuItem href="/smokes">Smoker</MenuItem>
+                    <List>
+                        <Subheader>HioS</Subheader>
+                        <ListItem primaryText="Kitchen" href="#/undercabinet" />
+                        <ListItem
+                            primaryText="Smoker"
+                            initiallyOpen={false}
+                            primaryTogglesNestedList={true}
+                            nestedItems={[
+                                <ListItem
+                                    key={1}
+                                    primaryText="Current"
+                                    href="#/smokes"
+                                />,
+                                <ListItem
+                                    key={2}
+                                    primaryText="History"
+                                    href="#/smokesHistory"
+                                />
+                            ]}
+                        />
+                    </List>
                 </Drawer>
             </div>
         );

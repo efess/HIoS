@@ -28,15 +28,21 @@ function startServer(config){
 cfg.load()
     .then(function(config){
         return db.init(config.store)
-            .then(schema.upgrade)
+            .then(schema.upgrade, function(err) {
+                    console.log("Failure init db: " + err);
+            })
             // .then(mqBroker.start,
             //     function(err){
             //         console.log("Failure init db, exiting\n" + err);
             //     })
-            .then(function(){return startServer(config);},
+            .then(function(){
+                    return startServer(config);},
                 function(err){
                     console.log("Failure init mq broker, exiting\n" + err);
-                });
+                })
+            .then(function(){}, function(err){
+                    console.log("Failure starting server, exiting\n" + err);
+            });
         },
         function(err){
             console.log('Failure loading config, exiting\n' + err);
