@@ -7,6 +7,9 @@ var db = require('./db');
 var schema = require('./store/schema');
 var path = require('path');
 var mqBroker = require('./mqtt/broker');
+require('./mqtt/client');
+var tasks = require('./tasks/task');
+var wu = require('./tasks/weatherUnderground');
 
 function startServer(config){
     // view engine setup
@@ -23,6 +26,18 @@ function startServer(config){
     
     app.listen(port);
     console.log('Server is listening on port ' + port);
+
+    startTasks(config);
+}
+
+function startTasks(config) {
+    tasks.addTask({
+        timing: 'interval',
+        time: 60000, // every minute
+        fn: wu.update,
+        fnContext: config.weatherUnderground
+    });
+    tasks.startAll();
 }
 
 cfg.load()

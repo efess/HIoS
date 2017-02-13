@@ -27,8 +27,11 @@ var smokes = {
     getSmokerOptions: function(deviceId) {
         return db.query("SELECT * FROM smokes WHERE deviceId = ?", [deviceId]).then(R.head);
     },
-    getExistingSessions: function(deviceId, dateTime) {
+    getExistingSessions: function(deviceId) {
         return db.query("SELECT * FROM smokes_session WHERE end <= 0 AND deviceId = ? ORDER BY start", [deviceId]);
+    },
+    getPreviousSessions: function(deviceId) {
+        return db.query("SELECT * FROM smokes_session WHERE end > 0 AND deviceId = ? ORDER BY end", [deviceId]);
     },
     createSession: function(tokens){
         return db.query("INSERT INTO smokes_session (deviceId, start, end, name, target, smokerType, description, probeId) VALUES" +

@@ -164,6 +164,20 @@ router.post('/newSession', function(req, res) {
         });
 });
 
+router.post('/getHistory', function(req, res) {
+    var deviceId = req.body.deviceId || _testDeviceId;
+    return smokes.getPreviousSessions(deviceId)
+        .then(function(data) {
+            // var response = {
+            //     sessions: sessions,
+            //     options: options
+            // };
+            res.json(data); 
+        }, function _fail(err) {
+            res.send('Error: ' + err);
+        });
+});
+
 router.post('/getSessions', function(req, res) {
 
     var deviceId = req.body.deviceId || _testDeviceId;

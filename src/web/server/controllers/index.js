@@ -28,9 +28,9 @@ router.get('/eventstest', function(req, res) {
         });
 });
 
-router.use('/device/smokes', require('./device/smokes'));
 router.use('/undercabinet', require('./undercabinet'));
 router.use('/smokes', require('./smokes'));
+router.use('/environment', require('./environment'));
 router.use('/admin', require('./admin'));
 
 module.exports = router

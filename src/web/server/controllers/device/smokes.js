@@ -2,54 +2,10 @@ var express = require('express'),
     Promise = require('promise'),
     smokes = require('../../model/smokes'),
     device = require('../../model/device'),
-    mqtt = require('mqtt'),
     router = express.Router(),
     uuid = require('node-uuid'),
     base64 = require('base64-js');
 
-var mqttHost = 'pihub.home.lan';
-
-var client = mqtt.createClient(1880, mqttHost);
-client.on('connect', function(){
-    console.log('mqtt connected');
-    client.subscribe("/home/outside/smoker/stoker/state");
-});
- 
-client.on('message', function(topic, data){
-    if(topic === "/home/outside/smoker/stoker/state") {
-        var deviceIdStr = '11e6f399-dcb7-4651-a585-34e2059163e5';
-        console.log(data);
-
-        var smokerUpdate = JSON.parse(data);
-        var deviceId = uuid.unparse(new Buffer(deviceIdStr));
-        checkDevice(deviceId).then(function(){
-                return smokes.getSmokesDevice(deviceId).then(function(smokesDevice){
-                    if(!smokesDevice) {
-                        return smokes.newSmokesDevice([deviceId, 0, 0])
-                    } else {
-                        return Promise.resolve(smokesDevice);
-                    }
-                });
-            }).then(function(smokesDevice){
-                var targets = smokesDevice || {}
-                var tokens = [
-                    deviceId,
-                    new Date().getTime() / 1000, // seconds since epoch...
-                    isNaN(smokerUpdate.probe0) ? null : smokerUpdate.probe0,
-                    isNaN(smokerUpdate.probe1) ? null : smokerUpdate.probe1,
-                    isNaN(smokerUpdate.probe2) ? null : smokerUpdate.probe2,
-                    isNaN(smokerUpdate.probe3) ? null : smokerUpdate.probe3,
-                    smokerUpdate.fanState
-                ];
-                smokes.addEvent(tokens)
-                    .then(function(){ }, function(err){
-                        console.log('ERROR ' + err);
-                    });
-            }, function _failed(err){
-                console.log('ERROR ' + err);
-            });
-    }
-});
 
 function padLeft(totalLength, padChar, str){
     var realStr = str + "";
@@ -70,47 +26,6 @@ function checkDevice(deviceId) {
             }
         });
 }
-
-router.post('/event', function(req, res) {
-    console.log(req.body);
-    var deviceId = uuid.unparse(new Buffer(req.body.id));
-    checkDevice(deviceId).then(function(){
-            return smokes.getSmokesDevice(deviceId).then(function(smokesDevice){
-                if(!smokesDevice) {
-                    return smokes.newSmokesDevice([deviceId, 0, 0])
-                } else {
-                    return Promise.resolve(smokesDevice);
-                }
-            })
-        }).then(function(smokesDevice){
-            var targets = smokesDevice || {}
-            var returnBody = "smokes_update:" + 
-                "grill:" + padLeft(5, " ", targets.grillTarget || 0) + 
-                "meat:" + padLeft(5, " ", targets.meatTarget || 0) +
-                "END";
-            
-            var tokens = [
-                deviceId,
-                new Date().getTime() / 1000, // seconds since epoch...
-                isNaN(req.body.grill) ? null : req.body.grill,
-                isNaN(req.body.meat) ? null : req.body.meat,
-                req.body.fanstate
-            ];
-            smokes.addEvent(tokens)
-                .then(function(){
-                    res.send(returnBody);
-                }, function(){
-                    res.send('ERROR');
-                });
-        }, function _failed(err){
-                res.send('ERROR');
-        })
-    });
-    
-    
-    
-    
-    
     
 
 module.exports = router

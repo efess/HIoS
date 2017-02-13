@@ -8,7 +8,9 @@ import Subheader from 'material-ui/Subheader';
 const locationMap = {
     '': 'Home',
     'undercabinet': 'Undercabinet',
-    'smokes': 'Smoker'
+    'environment': 'Living Room',
+    'smokes': 'Smoker',
+    'smokesHistory': 'Smoker Sessions'
 };
 
 export class AppNav extends React.Component {
@@ -44,6 +46,7 @@ export class AppNav extends React.Component {
                     <List>
                         <Subheader>HioS</Subheader>
                         <ListItem primaryText="Kitchen" href="#/undercabinet" />
+                        <ListItem primaryText="Livin Room" href="#/environment" />
                         <ListItem
                             primaryText="Smoker"
                             initiallyOpen={false}

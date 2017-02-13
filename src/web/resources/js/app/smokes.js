@@ -4,7 +4,7 @@ import ReactDOM from'react-dom';
 import React from 'react'; 
 import SmokerStatus from '../components/smoker/smokerStatus';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
-import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider'
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
 $(document).ready(function(){
     

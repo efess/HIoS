@@ -53,6 +53,7 @@ export default class SessionOptions extends React.Component {
                 break;
         }
     }
+    
 
     render() {
         const actions = [
