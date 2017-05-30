@@ -33,7 +33,9 @@ function startServer(config){
 function startTasks(config) {
     tasks.addTask({
         timing: 'interval',
-        time: 60000, // every minute
+        time: 600000,   // every 10 minutes
+                        // key only gives 500 calls per day
+                        // 10 minutes means 432 per day (3 API calls per)
         fn: wu.update,
         fnContext: config.weatherUnderground
     });

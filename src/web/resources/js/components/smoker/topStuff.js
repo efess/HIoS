@@ -72,14 +72,14 @@ export default class TopStuff extends React.Component {
                             <tr>
                             {
                                 probeIds.map(function(idx){
-                                    return  <td style={style.tdId}>{idx}</td>
+                                    return  <td style={style.tdId} key={idx}>{idx}</td>
                                 })
                             }
                             </tr>
                             <tr>
                             {
                                 probeIds.map(function(idx){
-                                    return  <td style={style.tdTemps}>{probes[idx] && probes[idx].temp || '---'}  </td>
+                                    return  <td style={style.tdTemps} key={idx}>{probes[idx] && probes[idx].temp || '---'}  </td>
                                 })
                             }
                             </tr>

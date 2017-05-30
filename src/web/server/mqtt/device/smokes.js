@@ -13,7 +13,7 @@ function padLeft(totalLength, padChar, str){
 
 var events = [{
     topic: '/home/outside/smoker/stoker/state',
-    onEvent: function() {
+    onEvent: function(data) {
         var deviceIdStr = '11e6f399-dcb7-4651-a585-34e2059163e5';
         console.log(data);
 

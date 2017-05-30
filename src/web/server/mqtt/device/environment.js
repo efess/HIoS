@@ -16,8 +16,8 @@ function onEnvironmentUpdate(data, topic){
             var tokens = [
                 deviceId,
                 new Date().getTime() / 1000, // seconds since epoch...
-                isNaN(envData.temp) ? null : envData.temp/100,
-                isNaN(envData.humid) ? null : envData.humid/1000,
+                isNaN(envData.temp) ? null : envData.temp,
+                isNaN(envData.humid) ? null : envData.humid,
                 isNaN(envData.pres) ? null : envData.pres/1000,
                 isNaN(envData.motion) ? null : envData.motion
             ];

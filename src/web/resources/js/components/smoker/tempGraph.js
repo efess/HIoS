@@ -88,17 +88,41 @@ export default class TempGraph extends React.Component {
         }            
     }
 
+    granularity() {
+        return parseInt(this.props && this.props.history && this.props.history.gran || 0);
+    }
+    datasets() {
+        return this.props && this.props.datasets  || [[]];
+    }
+
+    timeExtentMax() {
+        return this.datasets().reduce(function(v, dataset){
+            return dataset.reduce(function(v2, obj){
+                return Math.max(v2, obj.timestamp);
+            }, v);
+        }, -Infinity);
+    }
+
+    timeExtentMin() {
+        return this.datasets().reduce(function(v, dataset){
+            return dataset.reduce(function(v2, obj){
+                return Math.min(v2, obj.timestamp);
+            }, v);
+        }, Infinity);
+    }
+
     render() {
         var component = this;
-        var data = this.props && this.props.history && this.props.history.data  || [];
-        var granularity = parseInt(this.props && this.props.history && this.props.history.gran || 0);
-
-        data = data.map(function(d) {
-            return {
-                timestamp: d.timestamp * 1000,
-                temp: d.temp
-            };
-        });
+        var datasets = this.datasets();
+        var granularity = this.granularity();
+        var data = datasets[0];
+        
+        // data = data.map(function(d) {
+        //     return {
+        //         timestamp: d.timestamp * 1000,
+        //         temp: d.temp
+        //     };
+        // });
 
         // data = this.generateData(granularity);
         var yValues = [];
@@ -110,7 +134,7 @@ export default class TempGraph extends React.Component {
         var pheight = this.props.height;
  
         var container = new ReactFauxDOM.Element('div');
-        container.setAttribute('position', 'relative');
+        container.style.setProperty('position', 'relative');
  
         var aSvg = new ReactFauxDOM.Element('svg');
         aSvg.style.setProperty('position', 'relative');
@@ -150,12 +174,14 @@ export default class TempGraph extends React.Component {
             .attr("dy", "0.71em")
             .attr("fill", "#000")
             .text("ºF");
-
-        svg.append("path")
-            .datum(data)
-            .attr("class", "line")
-            .attr("transform", "translate(" + margin.left + ",0)")
-            .attr("d", line);
+        
+        datasets.forEach(function(dataset) {
+            svg.append("path")
+                .datum(dataset)
+                .attr("class", "line")
+                .attr("transform", "translate(" + margin.left + ",0)")
+                .attr("d", line);
+        });
  
         if(this.state.tip && this.state.tip.on) {
             var tooltip = new ReactFauxDOM.Element('div');
@@ -175,7 +201,7 @@ export default class TempGraph extends React.Component {
         }
  
         svg.selectAll("dot")
-            .data(data).enter()
+            .data(datasets[0]).enter()
             .append("circle")
             .style('fill', 'none')
             .style('stroke', 'none')

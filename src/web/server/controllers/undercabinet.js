@@ -5,7 +5,7 @@ var express = require('express'),
     mqtt = require('mqtt'),
     base64 = require('base64-js');
 
-var mqttHost = 'pihub.home.lan';
+var mqttHost = 'mqtt://mqtt.home.lan';
 var topics = {
     stateResponse: '/home/kitchen/cabinet/lights/response',
     stateRequest: '/home/kitchen/cabinet/lights/request'
@@ -20,12 +20,14 @@ router.get('/', function(req, res) {
 });
 
 router.post('/getState', function(req, res) {
-    
-    var client = mqtt.createClient(1880, mqttHost);
+    var client  = mqtt.connect(mqttHost);
     client.on('connect', function(){
         console.log('mqtt connected');
         client.subscribe(topics.stateResponse);
         client.publish(topics.stateRequest);
+    });
+    client.on('error', function(err){
+        console.log('mqtt failed to connect: ' + err);
     });
     
     client.on('message', function(topic, data){

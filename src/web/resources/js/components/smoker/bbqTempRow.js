@@ -5,6 +5,7 @@ import TempGraph from './tempGraph';
 import ajax from '../../app/ajax';
 import Paper from 'material-ui/Paper';
 import SessionOptions from './sessionOptions';
+import time from '../../app/helper/time';
 
 export default class BbqTempRow extends React.Component {
 
@@ -25,6 +26,22 @@ export default class BbqTempRow extends React.Component {
     }
 
     componentDidMount() {
+    }
+
+    graphData() {
+        var data = this.props.history && this.props.history.data || []
+        return  [
+            data.map(function(d){ return { timestamp:d.timestamp* 1000, temp: d.temp }; })
+        ]
+    }
+    currentTemp() {
+        return this.props.current && 
+            this.props.current.temp && 
+            parseInt(this.props.current.temp)  || '---';
+    }
+
+    targetTemp() {
+        return this.props.target && parseInt(this.props.target) || '---';
     }
 
     render() {
@@ -64,20 +81,11 @@ export default class BbqTempRow extends React.Component {
             }
         }
 
-        var time = this.props.start;
+        var sessionStart = this.props.start;
         var timeStr = "";
-        if(time > 0) {
-            var timeDiffSeconds = ((new Date().getTime() - time)/1000);
-            var timeMinutes = parseInt(timeDiffSeconds / 60) % 60;
-            var timeHours = parseInt(timeDiffSeconds / 3600) % 60;
-            timeStr = "" + timeHours + ':' + ("0"+timeMinutes).slice(-2);
+        if(sessionStart > 0) {
+            timeStr = time.diffString(time, new Date().getTime());
         }
-        
-        var currentTemp = this.props.current && 
-            this.props.current.temp && 
-            parseInt(this.props.current.temp)  || '---';
-
-        var targetTemp = this.props.target && parseInt(this.props.target) || '---';
 
         var sessionOptions;
         if(this.props.probeId > 0) {
@@ -87,7 +95,7 @@ export default class BbqTempRow extends React.Component {
         return <Paper zDepth={1} rounded={false}>
             <div style={style.probeContainer} className="row">
                 <div className="col-md-6 hidden-sm-down">
-                    <TempGraph history={this.props.history || []}/>
+                    <TempGraph datasets={this.graphData()}/>
                 </div>
                 <div className="col-md-6 col-sm-12">
                     <div className="row">
@@ -95,9 +103,9 @@ export default class BbqTempRow extends React.Component {
                             <div style={style.probeName}>{this.props.name}</div>
                             {sessionOptions}
                         </div>
-                        <div className="col-sm-4 col-xs-6"><span style={style.probeCurrentTemp}>{currentTemp}°</span></div>
+                        <div className="col-sm-4 col-xs-6"><span style={style.probeCurrentTemp}>{this.currentTemp()}°</span></div>
                         <div className="col-sm-4 col-xs-6">
-                            <LabeledValue color='#663300' size='3' value={targetTemp} name="Target" change={this.handleTargetChange.bind(this)}/>
+                            <LabeledValue color='#663300' size='3' value={this.targetTemp()} name="Target" change={this.handleTargetChange.bind(this)}/>
                         </div>
                         <div className="col-sm-4 col-xs-12" style={style.timeSpent}>{timeStr}</div>
                     </div>

@@ -33,6 +33,9 @@ var smokes = {
     getPreviousSessions: function(deviceId) {
         return db.query("SELECT * FROM smokes_session WHERE end > 0 AND deviceId = ? ORDER BY end", [deviceId]);
     },
+    getSession: function(deviceId, tableId) {
+        return db.query("SELECT * FROM smokes_session WHERE end > 0 AND deviceId = ? AND tableId = ? ORDER BY end", [deviceId, tableId]);
+    },
     createSession: function(tokens){
         return db.query("INSERT INTO smokes_session (deviceId, start, end, name, target, smokerType, description, probeId) VALUES" +
             " (?, ?, ?, ?, ?, ?, ?, ?)", tokens);

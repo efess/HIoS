@@ -110,7 +110,7 @@ export default class LineChart extends React.Component {
         var pheight = this.props.height;
  
         var container = new ReactFauxDOM.Element('div');
-        container.setAttribute('position', 'relative');
+        container.style.setProperty('position', 'relative');
  
         var aSvg = new ReactFauxDOM.Element('svg');
         aSvg.style.setProperty('position', 'relative');

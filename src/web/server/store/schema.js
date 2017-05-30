@@ -11,8 +11,9 @@ var Promise = require('promise');
 // 3 - Increase timestamp columns to BIGINT
 // 4 - Added environment table
 // 5 - Added weather tables
+// 6 - Added astronomy weather table
 
-var latestVersion = 5;
+var latestVersion = 6;
 var sqlList = [];
 
 function addSql(sql, version){
@@ -163,6 +164,14 @@ function getUpgradeSqls(currentVersion){
             ');');
     }
     
+    if(currentVersion <= 5){
+        upgradeSqls.push('CREATE TABLE IF NOT EXISTS weather_astronomy (' +
+            'tableId INTEGER AUTO_INCREMENT PRIMARY KEY,' + 
+            'locationId VARCHAR(50),' +
+            'timestamp INTEGER,' +
+            'json TEXT' +
+            ');');
+    }
 
     return upgradeSqls;   
 }

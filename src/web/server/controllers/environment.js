@@ -4,20 +4,49 @@ var express = require('express'),
     router = express.Router(),
     R = require('ramda');
 
-router.get('/', function(req, res) {
-    res.render('environment', { title: 'Home HIoS - Room'});
+router.post('/status', function(req, res) { 
+    var deviceId = req.body.deviceId;
+    var response = {};
+
+    envModel.getEvent(deviceId)
+        .then(function(data){
+            response.current = data;
+        })
+        .then(function _success(){
+            res.send(JSON.stringify(response));
+        }, function _fail(err) {
+            res.send('Error: ' + err);
+        });
 });
 
-router.post('/status', function(req, res) {
-    // input should probably be Room?
+router.post('/current', function(req, res) { 
+    var deviceId = req.body.deviceId;
+    var response = {};
 
+    envModel.getEvent(deviceId)
+        .then(function(data){
+            response.current = data;
+        })
+        .then(function _success(){
+            res.send(JSON.stringify(response));
+        }, function _fail(err) {
+            res.send('Error: ' + err);
+        });
+});
+
+router.post('/history', function(req, res) {
+    // input should probably be Room?
     var deviceId = req.body.deviceId;
     var recordLimit = parseInt(req.body.limit || 100);
     var gran = parseInt(req.body.gran || 3600);
+    var now = parseInt(req.body.time || (new Date().getTime() / 1000));
 
-    var now = (new Date().getTime() / 1000);
+    //var now = (new Date().getTime() / 1000);
     
-    var fromTime = (now - (now % gran)) - (100 * gran);
+    var fromTime = (now - (now % gran)) - (recordLimit * gran);
+
+    var difference = now - fromTime;
+    console.log(now + "     " + fromTime + "      " + difference);
     var toTime = now;
     var response = {
         
@@ -28,35 +57,26 @@ router.post('/status', function(req, res) {
         fromTime, // seconds since epoch...
         toTime,
         gran,
-        req.body.limit || 100,
+        recordLimit,
     ];
       
     envModel.getEvents(tokens).then(function(data){
-        response.history = data;
-        return;
+        response.history = [];
 
-        // var timeMap = data.reduce(function(arr, hist) {
-        //     arr[hist.timestamp] = hist;
-        //     return arr;
-        // }, {});
-        // var probes = response.probeDetail;
+        var timedData = data.reduce((arr, row) => {
+            arr[row.timestamp] = row;
+            return arr;
+        }, {});
 
-        // for(var i = 0; i < recordLimit; i++){
-        //     var exp = fromTime + (i * gran);
-        //     var hist = timeMap[exp];
-        //     if(!hist){
-        //         probes[0].history.data.push({timestamp: exp, temp: 0, target: 0});
-        //         probes[1].history.data.push({timestamp: exp, temp: 0, target: 0});
-        //         probes[2].history.data.push({timestamp: exp, temp: 0, target: 0});
-        //         probes[3].history.data.push({timestamp: exp, temp: 0, target: 0});
-        //     } else {
-        //         probes[0].history.data.push({timestamp: hist.timestamp,temp: hist.probe0,target: hist.probe0Target});
-        //         probes[1].history.data.push({timestamp: hist.timestamp,temp: hist.probe1,target: hist.probe1Target})
-        //         probes[2].history.data.push({timestamp: hist.timestamp,temp: hist.probe2,target: hist.probe2Target})
-        //         probes[3].history.data.push({timestamp: hist.timestamp,temp: hist.probe3,target: hist.probe3Target})
-        //     }
-
-        // }
+        for(var i = 0; i < recordLimit; i++){
+            var exp = fromTime + (i * gran);
+            var point = timedData[exp];
+            if(point){
+                response.history.push(point);
+            } else {
+                response.history.push({timestamp: exp, temperature: null, humidity: null, pressure: null, motion:null});
+            }
+        }
     }).then(function _success(){
         res.send(JSON.stringify(response));
     }, function _fail(err) {

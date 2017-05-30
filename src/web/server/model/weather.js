@@ -27,6 +27,13 @@ module.exports = {
                     " (?, ?, ?, ?)", [locationId, timestamp, date, json]);
             });
     },
+    setAstronomy: function(locationId, timestamp, json) {
+        return db.query('DELETE FROM weather_astronomy WHERE locationId = ?', [locationId])
+            .then(function() {
+                db.query("INSERT INTO weather_astronomy (locationId, timestamp, json) VALUES" +
+                    " (?, ?, ?)", [locationId, timestamp, json]);
+            });
+    },
     getNow: function(locationId) {
         return db.query('SELECT * FROM weather_now WHERE locationId = ?', [locationId])
             .then(R.head);
@@ -37,6 +44,10 @@ module.exports = {
     },
     getHourly: function(locationId) {
         return db.query('SELECT * FROM weather_hourly WHERE locationId = ?', [locationId])
+            .then(R.head);
+    },
+    getAstronomy: function(locationId) {
+        return db.query('SELECT * FROM weather_astronomy WHERE locationId = ?', [locationId])
             .then(R.head);
     }
 }

@@ -7,7 +7,7 @@ var express = require('express'),
     uuid = require('node-uuid'),
     base64 = require('base64-js');
 
-var mqttHost = 'pihub.home.lan';
+var mqttHost = 'mqtt.home.lan';
 var _probeArray = [0,1,2,3];
 var _testDeviceId = '31316536-6633-3939-2d64-6362372d3436';
 
@@ -226,6 +226,70 @@ router.post('/getSessions', function(req, res) {
     });
 });
 
+router.post('/getSmokerSession', function(req,res) {
+    var deviceId = req.body.deviceId || _testDeviceId;
+    var sessionId = req.body.sessionId || 0;
+
+    smokes.getSession(deviceId, sessionId)
+        .then(function _success(data){
+            res.send(JSON.stringify({session: R.head(data || [])}));
+        }, function _fail(err) {
+            res.send('Error: ' + err);
+        });
+});
+
+router.post('/getSmokerSessionEvents', function(req,res) {
+    var deviceId = req.body.deviceId || _testDeviceId;
+    var sessionId = req.body.sessionId || 0;
+    var recordLimit = parseInt(req.body.limit || 100);
+    var gran = parseInt(req.body.gran || 3600);
+
+    var now = (new Date().getTime() / 1000);
+    
+    var fromTime = (now - (now % gran))  - (100 * gran);
+    var toTime = now;
+    var response = {
+        probeDetail: _probeArray.map(function(id){ return {history: { data:[], gran: gran}, current: {} }; })
+    };
+
+    var tokens = [
+        deviceId,
+        fromTime, // seconds since epoch...
+        toTime,
+        gran,
+        req.body.limit || 100,
+    ];
+
+    smokes.getEvents(tokens).then(function(data){
+        var timeMap = data.reduce(function(arr, hist) {
+            arr[hist.timestamp] = hist;
+            return arr;
+        }, {});
+        var probes = response.probeDetail;
+
+        for(var i = 0; i < recordLimit; i++){
+            var exp = fromTime + (i * gran);
+            var hist = timeMap[exp];
+            if(!hist){
+                probes[0].history.data.push({timestamp: exp, temp: 0, target: 0});
+                probes[1].history.data.push({timestamp: exp, temp: 0, target: 0});
+                probes[2].history.data.push({timestamp: exp, temp: 0, target: 0});
+                probes[3].history.data.push({timestamp: exp, temp: 0, target: 0});
+            } else {
+                probes[0].history.data.push({timestamp: hist.timestamp,temp: hist.probe0,target: hist.probe0Target});
+                probes[1].history.data.push({timestamp: hist.timestamp,temp: hist.probe1,target: hist.probe1Target})
+                probes[2].history.data.push({timestamp: hist.timestamp,temp: hist.probe2,target: hist.probe2Target})
+                probes[3].history.data.push({timestamp: hist.timestamp,temp: hist.probe3,target: hist.probe3Target})
+            }
+
+        }
+    }).then(function _success(){
+        res.send(JSON.stringify(response));
+    }, function _fail(err) {
+        res.send('Error: ' + err);
+    });
+});
+
 router.post('/getSmokerStatus', function(req, res){
     var deviceId = req.body.deviceId || _testDeviceId;
     var recordLimit = parseInt(req.body.limit || 100);
@@ -236,7 +300,7 @@ router.post('/getSmokerStatus', function(req, res){
     var fromTime = (now - (now % gran))  - (100 * gran);
     var toTime = now;
     var response = {
-        probeDetail: _probeArray.map(function(id){ return {history: { data:[], gran: gran}, current: {} }; })
+        probeDetail: _probeArray.map(function(id){ return {history: { data:[], gran: gran} }; })
     };
 
     var tokens = [

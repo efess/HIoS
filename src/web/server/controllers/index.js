@@ -32,5 +32,6 @@ router.use('/undercabinet', require('./undercabinet'));
 router.use('/smokes', require('./smokes'));
 router.use('/environment', require('./environment'));
 router.use('/admin', require('./admin'));
+router.use('/weather', require('./weather'));
 
 module.exports = router

@@ -12,6 +12,7 @@ export default class SmokerHistory extends React.Component {
     constructor(props){
         super(props);
         this.state = {
+
         }
     }
 
@@ -35,15 +36,31 @@ export default class SmokerHistory extends React.Component {
         }
     }
 
+    rowClicked(rowNum, colNum) {
+        var history = this.state && this.state.history;
+        if(rowNum < 0 || !history || !history.length) {
+            return;
+        }
+        var hist = history[rowNum];
+        var newLoc = '#smokesHistoryEntry/' + hist.tableId; 
+        // if(window.history.pushState) {
+        //     window.history.pushState(null, null, newLoc);
+        // }
+        // else {
+            window.location.hash = newLoc;
+        //}
+    }
+
     render() {
         var history = this.state && this.state.history;
+        var that = this;
         var rows = history && history.length && history.map(function(hist, idx) {
             var diff = hist.end - hist.start;
             var duration = time.secondsToDuration(diff);
             var end = new Date(hist.end).toLocaleString();
 
             return <TableRow key={idx}>
-                <TableRowColumn></TableRowColumn>
+                <TableRowColumn>{hist.tableId}</TableRowColumn>
                 <TableRowColumn>{hist.probeId}</TableRowColumn>
                 <TableRowColumn>{hist.name}</TableRowColumn>
                 <TableRowColumn>{duration}</TableRowColumn>
@@ -63,7 +80,7 @@ export default class SmokerHistory extends React.Component {
             );
         }
 
-        return <Table>
+        return <Table onCellClick={that.rowClicked.bind(that)}>
             <TableHeader 
                 displaySelectAll={false}
                 adjustForCheckbox={false}>

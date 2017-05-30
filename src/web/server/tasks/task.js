@@ -11,8 +11,15 @@ function addTask(task) {
 function execIntervalTask(runningTask) {
     var task = runningTask.task;
     runningTask.timerId = setTimeout(function() {
-        task.fn(task.fnContext)
-            .then(execIntervalTask.bind(null, runningTask));
+        var next = execIntervalTask.bind(null, runningTask);
+        var p = task.fn(task.fnContext);
+        
+        if(p.then) {
+            p.then(next, next);
+        } else {
+            next();
+        }
+
     }, task.time);
 }
 function startTask(task) {
@@ -23,6 +30,7 @@ function startTask(task) {
     
     if(task.timing === 'interval') {
         execIntervalTask(runningTask);
+        task.fn(task.fnContext);
     }
     runningTasks.push(runningTask);
 }
