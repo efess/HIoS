@@ -1,7 +1,7 @@
 var mosca = require('mosca');
 
 var broker = {
-    start: function(){
+    start: function(config){
         
         var pubsubsettings = {
             type: 'redis',
@@ -9,7 +9,7 @@ var broker = {
             db: 0,
             port: 6379,
             return_buffers: true, // to handle binary payloads
-            host: "localhost"
+            host: config.redis.host
         };
         
         // var pubsubsettings = {

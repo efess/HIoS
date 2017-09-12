@@ -1,5 +1,4 @@
-var Promise = require('Promise'),
-    device = require('../../model/device');
+var device = require('../../model/device');
 
 function checkDevice(deviceId, type) {
     if(!deviceId) {

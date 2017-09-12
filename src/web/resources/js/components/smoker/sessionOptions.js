@@ -31,6 +31,7 @@ export default class SessionOptions extends React.Component {
     handleUpdateAndClose() {
         this.setState({updateIsOpen: false});
         if(this.props && this.props.onCloseSession) {
+            this.state.updateSession.tableId = this.props.tableId;
             this.state.updateSession.probeId = this.props.probeId;
             this.state.updateSession.end = new Date().getTime();
             this.props.onCloseSession(this.state.updateSession);

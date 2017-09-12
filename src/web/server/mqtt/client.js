@@ -4,9 +4,9 @@ var eventModules = [
     require('./device/environment').events,
 ];
 var events = eventModules.reduce((arr, evnts) => { return arr.concat(evnts);}, []);
-var mqttHost = 'pihub.home.lan';
+var mqttHost = 'mqtt://mqtt.home.lan:1880';
 
-var client = mqtt.createClient(1880, mqttHost);
+var client = mqtt.connect(mqttHost);
 
 client.on('connect', function(){
     console.log('mqtt connected');

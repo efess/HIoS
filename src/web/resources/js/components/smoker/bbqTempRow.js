@@ -84,12 +84,15 @@ export default class BbqTempRow extends React.Component {
         var sessionStart = this.props.start;
         var timeStr = "";
         if(sessionStart > 0) {
-            timeStr = time.diffString(time, new Date().getTime());
+            timeStr = time.diffString(sessionStart, new Date().getTime());
         }
 
         var sessionOptions;
         if(this.props.probeId > 0) {
-            sessionOptions = <SessionOptions onCloseSession={this.props.closeSession.bind(this)} probeId={this.props.probeId}/>;
+            sessionOptions = <SessionOptions 
+                    onCloseSession={this.props.closeSession.bind(this)} 
+                    probeId={this.props.probeId} 
+                    tableId={this.props.tableId}/>;
         }
 
         return <Paper zDepth={1} rounded={false}>

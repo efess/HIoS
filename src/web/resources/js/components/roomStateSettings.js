@@ -164,6 +164,7 @@ export default class RoomStateSettings extends React.Component {
                                 <Modal
                                     isOpen={this.state.displayColorPicker}
                                     onRequestClose={this.colorClose}
+                                    contentLabel="Modal"
                                     style={s.modal} >
                                     <div>
                                         <SketchPicker 

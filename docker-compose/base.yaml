@@ -1,0 +1,10 @@
+version: '2'
+services:
+  hios:
+    image: hios
+    links:
+      - redis
+    environment:
+      REDIS_HOST: 'redis'
+  redis:
+    image: "redis:alpine"

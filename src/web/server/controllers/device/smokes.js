@@ -1,5 +1,4 @@
 var express = require('express'),
-    Promise = require('promise'),
     smokes = require('../../model/smokes'),
     device = require('../../model/device'),
     router = express.Router(),

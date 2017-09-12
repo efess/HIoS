@@ -4,6 +4,20 @@ var extend = require('extend');
 
 var localConfig = 'local_config.json';
 
+function _applyEnvVar(obj, prop, env) {
+    if(env) {
+        obj[prop] = env;
+    }
+}
+
+function applyEnvVars() {
+    _applyEnvVar(config.store.params, 'host', process.env.STORE_HOST);
+    _applyEnvVar(config.store.params, 'user', process.env.STORE_USER);
+    _applyEnvVar(config.store.params, 'database', process.env.STORE_DB);
+    _applyEnvVar(config.store.params, 'password', process.env.STORE_PASS);
+    _applyEnvVar(config.redis, 'host', process.env.REDIS_HOST);
+}
+
 var config = {
 	load: function(){
         return new Promise(function(resolve, reject) {
@@ -15,6 +29,8 @@ var config = {
                     var cfgObj = JSON.parse(data);
                     extend(config, cfgObj);  
                     
+                    applyEnvVars(config);
+
                     resolve(config);   
                 }    
             });
@@ -30,8 +46,13 @@ var config = {
             host: 'localhost'
         }
     },
+    redis: {
+        host: 'localhost'
+    },
     publicDir: 'public/',
     listenPort: 8080
 }
+
+applyEnvVars();
 
 module.exports = config;

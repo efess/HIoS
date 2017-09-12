@@ -48,18 +48,12 @@ cfg.load()
             .then(schema.upgrade, function(err) {
                     console.log("Failure init db: " + err);
             })
-            // .then(mqBroker.start,
-            //     function(err){
-            //         console.log("Failure init db, exiting\n" + err);
-            //     })
-            .then(function(){
-                    return startServer(config);},
-                function(err){
-                    console.log("Failure init mq broker, exiting\n" + err);
-                })
-            .then(function(){}, function(err){
-                    console.log("Failure starting server, exiting\n" + err);
-            });
+            // .then(mqBroker.start.bind(mqBroker, config),
+            //     function(err){ console.log("Failure init db, exiting\n" + err); })
+            .then(startServer.bind(null, config),
+                function(err){ console.log("Failure upgrading db, exiting\n" + err); })
+            .then(function(){}, 
+                function(err){ console.log("Failure starting server, exiting\n" + err); });
         },
         function(err){
             console.log('Failure loading config, exiting\n' + err);

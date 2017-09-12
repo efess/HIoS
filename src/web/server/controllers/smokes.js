@@ -114,15 +114,13 @@ router.post('/updateProbeTarget', function(req, res) {
 });
 
 router.post('/closeSession', function(req, res) {
-    var deviceId = req.body.deviceId || _testDeviceId;
     var target = parseInt(req.body.target || 0);
-    var probeId = req.body.probeId || 0;
+    var tableId = req.body.tableId || 0;
 
     var tokens = [
         req.body.end || new Date().getTime(),
         req.body.description || '',
-        deviceId,
-        probeId
+        tableId
     ];
     
     smokes.closeSession(tokens)

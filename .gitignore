@@ -31,3 +31,4 @@ bld/
 *.sap
 src/web/components
 src/web/_cache
+*.tar

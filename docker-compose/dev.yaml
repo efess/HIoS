@@ -1,0 +1,12 @@
+version: '2'
+services:
+  hios:
+    image: hios
+    ports:
+      - "8080:8080"
+      - "5858:5858"
+    environment:
+      MODE: 'dev'
+      STORE_HOST: 'localhost'
+    volumes:
+      - ..:/usr/src/app

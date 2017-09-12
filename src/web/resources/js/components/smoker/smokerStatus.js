@@ -126,6 +126,7 @@ export default class SmokerStatus extends React.Component {
             {
                 sessions.map(function(session, i){
                     return <BbqTempRow 
+                        tableId={session.tableId}
                         name={session.name}
                         target={session.target} 
                         start={session.start} 
