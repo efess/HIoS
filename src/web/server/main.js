@@ -26,7 +26,7 @@ function startServer(config){
     app.listen(port);
     console.log('Server is listening on port ' + port);
 
-    // startTasks(config);
+    startTasks(config);
 }
 
 function startTasks(config) {
@@ -53,5 +53,5 @@ cfg.load()
                 function(err){ console.log("Failure starting server, exiting\n" + err); });
         },
         function(err){
-            console.log('Failure loading config, exiting\n' + err);
+            console.log('Failure load   ing config, exiting\n' + err);
         });
