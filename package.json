@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "webpack-dev-server --content-base src/web",
     "start": "node ./src/web/server/main.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "docker-build": "docker build -t hios ."
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -46,7 +45,6 @@
     "gulp-babel": "^6.1.2",
     "jquery": "^2.2.4",
     "material-ui": "^0.18.3",
-    "mosca": "^2.5.1",
     "mqtt": "^2.8.2",
     "mysql": "^2.10.2",
     "node-uuid": "^1.4.7",

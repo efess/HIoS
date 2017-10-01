@@ -6,7 +6,6 @@ var cfg = require('./config');
 var db = require('./db');
 var schema = require('./store/schema');
 var path = require('path');
-var mqBroker = require('./mqtt/broker');
 require('./mqtt/client');
 var tasks = require('./tasks/task');
 var wu = require('./tasks/weatherUnderground');
@@ -27,7 +26,7 @@ function startServer(config){
     app.listen(port);
     console.log('Server is listening on port ' + port);
 
-    startTasks(config);
+    // startTasks(config);
 }
 
 function startTasks(config) {
@@ -46,10 +45,8 @@ cfg.load()
     .then(function(config){
         return db.init(config.store)
             .then(schema.upgrade, function(err) {
-                    console.log("Failure init db: " + err);
+                console.log("Failure init db: " + err);
             })
-            // .then(mqBroker.start.bind(mqBroker, config),
-            //     function(err){ console.log("Failure init db, exiting\n" + err); })
             .then(startServer.bind(null, config),
                 function(err){ console.log("Failure upgrading db, exiting\n" + err); })
             .then(function(){}, 

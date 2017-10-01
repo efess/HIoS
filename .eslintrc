@@ -1,0 +1,9 @@
+{
+    "extends": "eslint:recommended",
+    "rules": {
+        "semi": 0
+    },
+    "env": {
+        "node": true
+    }
+}

@@ -15,7 +15,8 @@ function applyEnvVars() {
     _applyEnvVar(config.store.params, 'user', process.env.STORE_USER);
     _applyEnvVar(config.store.params, 'database', process.env.STORE_DB);
     _applyEnvVar(config.store.params, 'password', process.env.STORE_PASS);
-    _applyEnvVar(config.redis, 'host', process.env.REDIS_HOST);
+    _applyEnvVar(config.mqtt, 'host', process.env.MQTT_HOST);
+    _applyEnvVar(config.mqtt, 'port', process.env.MQTT_PORT);
 }
 
 var config = {
@@ -46,8 +47,9 @@ var config = {
             host: 'localhost'
         }
     },
-    redis: {
-        host: 'localhost'
+    mqtt: {
+        host: 'localhost',
+        port: 1883
     },
     publicDir: 'public/',
     listenPort: 8080
