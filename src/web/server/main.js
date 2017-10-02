@@ -6,7 +6,7 @@ var cfg = require('./config');
 var db = require('./db');
 var schema = require('./store/schema');
 var path = require('path');
-require('./mqtt/client');
+var mqtt = require('./mqtt/client');
 var tasks = require('./tasks/task');
 var wu = require('./tasks/weatherUnderground');
 
@@ -21,6 +21,7 @@ function startServer(config){
     
     var port = process.env.PORT || config.listenPort || 8080;
     app.use(express.static(config.publicDir));
+    app.use(require('./middleware/configMiddleware')(config));
     app.use(require('./controllers'));
     
     app.listen(port);
@@ -42,16 +43,25 @@ function startTasks(config) {
 }
 
 cfg.load()
-    .then(function(config){
+    .then((config) => {
         return db.init(config.store)
-            .then(schema.upgrade, function(err) {
-                console.log("Failure init db: " + err);
-            })
-            .then(startServer.bind(null, config),
-                function(err){ console.log("Failure upgrading db, exiting\n" + err); })
-            .then(function(){}, 
-                function(err){ console.log("Failure starting server, exiting\n" + err); });
-        },
-        function(err){
-            console.log('Failure load   ing config, exiting\n' + err);
-        });
+            .then(schema.upgrade)
+            .then(() => mqtt.connect(config.mqtt))
+            .then(() => startServer(config))
+    }, (err) => {
+        console.log("Failure starting server, exiting\n" + err);
+    })
+// cfg.load()
+//     .then(function(config){
+//         return db.init(config.store)
+//             .then(schema.upgrade, function(err) {
+//                 console.log("Failure init db: " + err);
+//             })
+//             .then(startServer.bind(null, config),
+//                 function(err){ console.log("Failure upgrading db, exiting\n" + err); })
+//             .then(function(){}, 
+//                 function(err){ console.log("Failure starting server, exiting\n" + err); });
+//         },
+//         function(err){
+//             console.log('Failure load   ing config, exiting\n' + err);
+//         });

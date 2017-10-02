@@ -7,7 +7,8 @@ var express = require('express'),
     uuid = require('node-uuid'),
     base64 = require('base64-js');
 
-var mqttHost = 'mqtt.home.lan';
+
+const mqttUrl = (mqttConf) => `mqtt://${mqttConf.host}:${mqttConf.port}`
 var _probeArray = [0,1,2,3];
 var _testDeviceId = '31316536-6633-3939-2d64-6362372d3436';
 
@@ -18,7 +19,7 @@ var strToArrayBuffer = function(arrayBuffer, offset, str, length) {
     }
 }
 
-function sendDeviceUpdate(config) {
+const sendDeviceUpdate = mqttConf => devConfig => {
     var buffer = new ArrayBuffer(64);
     var uint8view = new Uint8Array(buffer);
     var uint16view = new Uint16Array(buffer);
@@ -26,7 +27,7 @@ function sendDeviceUpdate(config) {
     var grillTarget = 0;
     var byteCounter = 0;
 
-    var probes = config.probes;
+    var probes = devConfig.probes;
     var grillProbe = R.find(R.propEq('probeId', 0))(probes);
     grillTarget = grillProbe && grillProbe.target || 0;
 
@@ -53,14 +54,14 @@ function sendDeviceUpdate(config) {
     byteCounter += 2;
 
     // Fan Pulse
-    uint8view[byteCounter++] = config.options.fanPulse;
+    uint8view[byteCounter++] = devConfig.options.fanPulse;
 
     var base64Str = base64.fromByteArray(uint8view.subarray(0, byteCounter));
     
-    var client = mqtt.createClient(1880, mqttHost);
+    var client  = mqtt.connect(mqttUrl(mqttConf));
     client.publish('/home/outside/smoker/stoker/config/update', base64Str);
     
-    res.send('SUCCESS published ' + base64Str.length + ' long: ' + base64Str);
+    // res.send('SUCCESS published ' + base64Str.length + ' long: ' + base64Str);
 }
 
 function getDeviceConfig(deviceId) {
@@ -77,9 +78,9 @@ function getDeviceConfig(deviceId) {
     });        
 }
 
-function handleProbeUpdate(deviceId){
+function handleProbeUpdate(deviceId,config){
     return getDeviceConfig(deviceId)
-        .then(sendDeviceUpdate);
+        .then(sendDeviceUpdate(config.mqtt));
 }
  
 router.get('/', function(req, res) {
@@ -106,7 +107,7 @@ router.post('/updateProbeTarget', function(req, res) {
 
     smokes.updateProbeTarget(deviceId, probeId, target)
         .then(function _success(){
-            handleProbeUpdate(deviceId);
+            handleProbeUpdate(deviceId, req.config);
             res.send({status:"SUCCESS"});
         }, function _fail(err) {
             res.send('Error: ' + err);
@@ -125,7 +126,6 @@ router.post('/closeSession', function(req, res) {
     
     smokes.closeSession(tokens)
         .then(function _success(){
-            handleProbeUpdate(deviceId);
             res.send({status:"SUCCESS"});
         }, function _fail(err) {
             res.send('Error: ' + err);

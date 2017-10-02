@@ -5,7 +5,8 @@ var express = require('express'),
     mqtt = require('mqtt'),
     base64 = require('base64-js');
 
-var mqttHost = 'mqtt://mqtt.home.lan:1880';
+const mqttUrl = (mqttConf) => `mqtt://${mqttConf.host}:${mqttConf.port}`
+// var mqttHost = 'mqtt://mqtt.home.lan:1880';
 var topics = {
     stateResponse: '/home/kitchen/cabinet/lights/response',
     stateRequest: '/home/kitchen/cabinet/lights/request'
@@ -20,7 +21,7 @@ router.get('/', function(req, res) {
 });
 
 router.post('/getState', function(req, res) {
-    var client  = mqtt.connect(mqttHost);
+    var client  = mqtt.connect(mqttUrl(req.config.mqtt));
     client.on('error', function(err){
         console.log('mqtt failed to connect: ' + err);
     });
@@ -46,7 +47,7 @@ router.post('/getState', function(req, res) {
             options.pirTimeout = uint16view[byteCount];
             byteCount += 4;
             
-            function pullRoomOptions(byteStart, roomOptions) {
+            const pullRoomOptions = (byteStart, roomOptions) => {
                 var byteOffset = byteStart;
                 roomOptions.transition = uint8view[byteOffset++];
                 roomOptions.animation = uint8view[byteOffset++];
@@ -78,7 +79,7 @@ router.post('/getState', function(req, res) {
 });
 
 router.post('/changeOptions', function(req, res) {
-    var client = mqtt.createClient(1880, mqttHost);
+    var client  = mqtt.connect(mqttUrl(req.config.mqtt));
     var options = req.body.options || {};
     var color = req.body.color || options.occupied.color;
     var occupiedOpts = options.occupied;
