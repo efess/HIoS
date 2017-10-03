@@ -17,6 +17,7 @@ function applyEnvVars() {
     _applyEnvVar(config.store.params, 'password', process.env.STORE_PASS);
     _applyEnvVar(config.mqtt, 'host', process.env.MQTT_HOST);
     _applyEnvVar(config.mqtt, 'port', process.env.MQTT_PORT);
+    _applyEnvVar(config.weatherUnderground, 'apiKey', process.env.WU_KEY)
 }
 
 var config = {
@@ -50,6 +51,7 @@ var config = {
         host: 'localhost',
         port: 1883
     },
+    weatherUnderground: {},
     publicDir: 'public/',
     listenPort: 8080
 }
